@@ -22,7 +22,7 @@ The wallpaper folder is copied as is into Wallpaper Engine and into CasaOS, so k
 | `star-wallpaper/` | Starry Orbit | `so-` | `window.Starry` | `/DATA/AppData/casamod/mod/wallpapers/starry-orbit/` |
 | `plexus-wallpaper/` | Neural Plexus | `px-` | `window.Plexus` | `/DATA/AppData/casamod/mod/wallpapers/neural-plexus/` |
 
-The CasaOS mod that runs them (Live Wallpapers, which provides the Wallpaper Engine web API) is a separate repository: NescauQuente/CasaMODs. Neural Plexus came from Starry Orbit (menu, languages, audio, album colors, clock work the same way); the two are independent, but a fix in one of those shared pieces may be worth porting to the other.
+The CasaOS mod that runs them (Live Wallpapers, which provides the Wallpaper Engine web API) is a separate repository: UsuarioDeJava/CasaMODs. Neural Plexus came from Starry Orbit (menu, languages, audio, album colors, clock work the same way); the two are independent, but a fix in one of those shared pieces may be worth porting to the other.
 
 ## Working rules
 

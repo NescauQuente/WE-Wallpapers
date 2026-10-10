@@ -2,7 +2,7 @@
 
 An animated wallpaper for Wallpaper Engine (**Web** type): a living 3D network. Glowing nodes drift in depth, connect to their neighbors with lines and faint triangles, and signals race along the connections in chain reactions, like nerve impulses. Now and then part of the network assembles into a shape and lets it go again. Inspired by the plexus background of the Home Assistant login page, rebuilt from scratch in WebGL2.
 
-It also runs directly in a browser (open `index.html`; press **M** for the settings menu) and on CasaOS: this very folder, copied into `/DATA/AppData/casamod/mod/wallpapers/` for the Live Wallpapers mod (a separate repository, NescauQuente/CasaMODs).
+It also runs directly in a browser (open `index.html`; press **M** for the settings menu) and on CasaOS: this very folder, copied into `/DATA/AppData/casamod/mod/wallpapers/` for the Live Wallpapers mod (a separate repository, UsuarioDeJava/CasaMODs).
 
 ## Highlights
 

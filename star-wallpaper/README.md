@@ -2,7 +2,7 @@
 
 An animated wallpaper for Wallpaper Engine (**Web** type): a galaxy of stars orbiting the center of the screen, with a fluid procedural nebula, gravitational waves that stretch and squeeze space (and bend around the stars; the supermassive black hole sends out a two-armed spiral), shooting stars, ready-made themes, a clock and full audio reactivity.
 
-It also runs directly in a browser (open `index.html`; press **M** for the settings menu) and on CasaOS: this very folder, copied into `/DATA/AppData/casamod/mod/wallpapers/` for the Live Wallpapers mod (a separate repository, NescauQuente/CasaMODs).
+It also runs directly in a browser (open `index.html`; press **M** for the settings menu) and on CasaOS: this very folder, copied into `/DATA/AppData/casamod/mod/wallpapers/` for the Live Wallpapers mod (a separate repository, UsuarioDeJava/CasaMODs).
 
 ## Highlights
 

@@ -1,6 +1,6 @@
 # Only the wallpaper projects live in this repository: everything else in this
 # workspace (other projects, .env) stays out. The CasaOS mod that runs them is
-# its own repository (NescauQuente/CasaMODs).
+# its own repository (UsuarioDeJava/CasaMODs).
 /*
 !/.gitignore
 !/.gitattributes
