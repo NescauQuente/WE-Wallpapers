@@ -8,7 +8,6 @@
   'use strict';
 
   var settings = S.settings, util = S.util, i18n = S.i18n;
-  var host = S.host || {};
   var t = i18n.t;
   var OPEN_KEY = 'starry-orbit-menu-groups';
   var DEFAULT_OPEN = { theme: true, stars: true, color: true, nebula: true };
@@ -57,8 +56,7 @@
 
   // ---------------------------------------------------------------------------
   // Colors: the panel follows the wallpaper (its background becomes the panel,
-  // the star color the accent). Hosts that style the menu themselves set
-  // host.menuStyle = 'host' and keep the CSS variables of their stylesheet.
+  // the star color the accent).
   // ---------------------------------------------------------------------------
   function hsl(h, s, l, a) {
     return a === undefined
@@ -106,7 +104,6 @@
   }
 
   function setTheme(c) {
-    if (host.menuStyle === 'host') return;
     var next = palette(c);
     if (theme && JSON.stringify(theme) === JSON.stringify(next)) return;
     theme = next;
@@ -163,11 +160,7 @@
     var wrap = h('div', { class: 'so-audio-src' });
     meter = h('canvas', { class: 'so-meter', width: 288, height: 40, title: t('audio.meterTitle') });
 
-    if (host.audioUI === 'tab') {
-      // The host feeds the audio of its own page (CasaOS: every media element in the tab)
-      audioStatus = h('div', { class: 'so-status', text: t('audio.tabIdle') });
-      wrap.appendChild(audioStatus);
-    } else if (!app.isWE) {
+    if (!app.isWE) {
       audioBtns = {
         mic: button(t('audio.mic'), t('audio.micTitle'), function () { start(app.audio.useMic); }),
         display: button(t('audio.display'), t('audio.displayTitle'), function () { start(app.audio.useDisplay); }),
@@ -348,10 +341,6 @@
     var c = meterCtx, W = meter.width, H = meter.height;
     var st = app.audio.state, bands = st.bands, n = bands.length, bw = W / n;
     var since = performance.now() - st.lastBeat, flash = since < 180 ? 1 - since / 180 : 0;
-    if (host.audioUI === 'tab' && audioStatus) {
-      var msg = st.raw > 0.001 ? t('audio.tabPlaying') : t('audio.tabIdle');
-      if (audioStatus.textContent !== msg) audioStatus.textContent = msg;
-    }
     c.clearRect(0, 0, W, H);
     for (var i = 0; i < n; i++) {
       var bh = Math.max(1, bands[i] * (H - 4));
@@ -433,7 +422,7 @@
         if (e.key === 'Escape') target.blur();
         return;
       }
-      if ((e.key === 'm' || e.key === 'M') && host.menuHotkey !== false) toggle();
+      if ((e.key === 'm' || e.key === 'M') ) toggle();
       else if (e.key === 'Escape' && !panel.hidden) toggle();
     });
   }

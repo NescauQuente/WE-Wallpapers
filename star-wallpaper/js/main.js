@@ -22,12 +22,7 @@
   var TAU = Math.PI * 2;
   var isWE = audio.state.source === 'we';
 
-  // Host integration (optional, set before the engine loads; see README):
-  //   storageKey, language(), pointerTarget(event), active(), startupHint,
-  //   menuHotkey, audioUI. Only pages that embed the engine use it; WE, the
-  //   browser and Live Wallpapers (CasaOS) don't.
-  var host = S.host || {};
-  var STORAGE_KEY = host.storageKey || 'starry-orbit-settings';
+  var STORAGE_KEY = 'starry-orbit-settings';
 
   // "Real stars" palette: [hue, saturation, lightness, weight]
   var SPECTRAL = [
@@ -136,7 +131,7 @@
     menu.setTheme(cfg);
 
     // Language: explicit setting, or automatic (WE language, then the system's)
-    var lang = i18n.resolve(cfg.language, weLang || (host.language ? host.language() : null));
+    var lang = i18n.resolve(cfg.language, weLang);
     if (first || lang !== i18n.lang()) {
       i18n.setLang(lang);
       fx.clock = true;
@@ -1407,8 +1402,6 @@
 
     var dt = Math.min((now - lastTime) / 1000, 0.1);
     lastTime = now;
-    // The host may hide the wallpaper (e.g. a CasaOS page without background)
-    if (host.active && !host.active()) return;
     updatePointer(now);
 
     audio.update(dt, cfg.audioenabled, cfg.audiosensitivity);
@@ -1531,15 +1524,13 @@
   };
 
   // Click → wave on release. Hold or drag → black hole, shockwave on release.
-  // Presses count when they land on the wallpaper; a host drawn behind another
-  // UI (CasaOS) decides which presses are on its "empty background".
+  // Presses count when they land on the wallpaper itself
   function pointerOk(e) {
-    return host.pointerTarget ? host.pointerTarget(e) : e.target === canvas;
+    return e.target === canvas;
   }
 
   document.addEventListener('mousedown', function (e) {
     if (e.button !== 0 || !regions.length || !pointerOk(e)) return;
-    if (host.pointerTarget) e.preventDefault();   // no text selection while dragging
     press = { x: e.clientX * dpr, y: e.clientY * dpr, t: performance.now(), hold: false };
   });
 
@@ -1590,7 +1581,7 @@
   refresh();
   clock.setSong(media.state);   // in case Wallpaper Engine told the song before the clock existed
   menu.init(app);
-  if (!isWE && host.startupHint !== false) menu.toast(i18n.t('toast.open'), 3500);
+  if (!isWE) menu.toast(i18n.t('toast.open'), 3500);
   rafId = requestAnimationFrame(frame);
 
   // Console access for debugging

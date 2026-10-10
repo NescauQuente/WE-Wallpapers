@@ -52,17 +52,7 @@ The hidden menu follows the wallpaper: the panel takes the background color (a b
 
 ## Hosts
 
-The engine runs as is in Wallpaper Engine, in a browser and in Live Wallpapers (which provides the Wallpaper Engine API). When Wallpaper Engine or Live Wallpapers pause it (`wallpaperPropertyListener.setPaused`), rendering and the clock stop until it resumes. A page that embeds the engine scripts directly can describe itself through an optional `window.Starry.host` object, set before the scripts load:
-
-| Field | Meaning |
-|---|---|
-| `storageKey` | `localStorage` key for the settings |
-| `language()` | Language hint for the automatic language |
-| `pointerTarget(event)` | Whether a press may start a wave or the black hole (default: presses on the canvas) |
-| `active()` | `false` pauses rendering (e.g. the host page hides the wallpaper) |
-| `startupHint`, `menuHotkey` | `false` hides the "press M" hint / disables the M key |
-| `menuStyle` | `'host'` when the host's stylesheet colors the menu; otherwise the menu takes the wallpaper colors (background → panel, star color → accent) |
-| `audioUI` | `'tab'` when the host feeds its own analyser through `Starry.audio.useAnalyser()` |
+The engine runs as is in Wallpaper Engine, in a browser and in Live Wallpapers (which provides the Wallpaper Engine API). When Wallpaper Engine or Live Wallpapers pause it (`wallpaperPropertyListener.setPaused`), rendering and the clock stop until it resumes.
 
 ## Changing settings or themes
 

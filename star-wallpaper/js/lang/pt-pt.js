@@ -27,8 +27,6 @@ Starry.i18n.add('pt-pt', {
   'audio.noAudio': 'Nenhum áudio partilhado. Marque "Partilhar áudio" ao escolher o separador ou ecrã.',
   'audio.listeningMic': 'A ouvir o microfone.',
   'audio.listeningDisplay': 'A ouvir o separador ou ecrã partilhado.',
-  'audio.tabIdle': 'A ouvir este separador: nada a tocar agora. Reproduza música no widget do leitor, ou qualquer áudio desta página.',
-  'audio.tabPlaying': 'A reagir ao áudio que está a tocar neste separador.',
   'share.title': 'Partilhar definições',
   'share.exportTitle': 'Gerar um código com as definições atuais',
   'share.importTitle': 'Aplicar um código de definições'

@@ -150,17 +150,6 @@
     });
   }
 
-  // Uses an analyser that already exists, e.g. the CasaOS mod's tap on every
-  // media element of the page; kind becomes state.source ('tab')
-  function useAnalyser(node, kind) {
-    release();
-    analyser = node;
-    freqData = new Uint8Array(node.frequencyBinCount);
-    edges = computeEdges(node.context.sampleRate, node.fftSize);
-    state.source = kind;
-    changed();
-  }
-
   function stop() {
     release();
     if (state.source !== 'we') state.source = null;
@@ -251,7 +240,6 @@
     useMic: useMic,
     useDisplay: useDisplay,
     attach: attach,
-    useAnalyser: useAnalyser,
     stop: stop
   };
 })(window.Starry = window.Starry || {});

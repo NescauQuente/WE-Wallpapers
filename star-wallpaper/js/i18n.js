@@ -6,8 +6,8 @@
  * registers itself with Starry.i18n.add(code, { key: text }). Missing keys fall
  * back along the chain (pt-pt → pt → English), so a dictionary can be partial.
  *
- * Automatic language: the language Wallpaper Engine reports (or the host page's,
- * e.g. CasaOS), then the browser's; anything unrecognized falls back to English.
+ * Automatic language: the language Wallpaper Engine (or Live Wallpapers)
+ * reports, then the browser's; anything unrecognized falls back to English.
  */
 (function (S) {
   'use strict';
@@ -40,10 +40,6 @@
     'audio.listeningMic': 'Listening to the microphone.',
     'audio.listeningDisplay': 'Listening to the shared tab or screen.',
     'audio.none': 'No source. Pick one to make the audio react.',
-    'audio.tabIdle': 'Listening to this tab: nothing playing right now. Play music in the player widget, or any audio on this page.',
-    'audio.tabPlaying': 'Reacting to the audio playing in this tab.',
-    'host.menuRow': 'Wallpaper',
-    'host.menuButton': 'Customize',
 
     'share.title': 'Share settings',
     'share.export': 'Export code',
@@ -99,9 +95,9 @@
 
   function setLang(code) {
     lang = LANGS[code] ? code : 'en';
-    // A host page (CasaOS) owns its <html>. Right-to-left only applies to the
-    // menu and toasts (they set dir on themselves): the clock keeps its corner.
-    if (!S.host) document.documentElement.lang = locale();
+    // Right-to-left only applies to the menu and toasts (they set dir on
+    // themselves): the clock keeps its corner.
+    document.documentElement.lang = locale();
   }
 
   // The text for key in the current language; en is the English text for keys
