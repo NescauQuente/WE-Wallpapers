@@ -1,0 +1,308 @@
+/*
+ * Starry Orbit — component styles (canvas layers, clock, settings menu, toasts).
+ * Also fit to embed in a host page (see Starry.host); every id, class and
+ * variable is prefixed with "so-" so it never collides with the host page.
+ *
+ * The --so-panel-* colors below are only the fallback: menu.js sets them on the
+ * panel and the toasts from the wallpaper's own colors, unless the host styles
+ * the menu itself (host.menuStyle = 'host').
+ */
+:root {
+  --so-panel-bg: rgba(8, 13, 26, 0.86);
+  --so-panel-solid: #0d1426;
+  --so-panel-raised: rgba(255, 255, 255, 0.05);
+  --so-panel-well: rgba(0, 0, 0, 0.28);
+  --so-panel-border: rgba(140, 170, 255, 0.16);
+  --so-panel-divider: rgba(140, 170, 255, 0.08);
+  --so-panel-scroll: rgba(140, 170, 255, 0.25);
+  --so-panel-text: #dde5ff;
+  --so-panel-muted: #8b98bd;
+  --so-panel-accent: #7aa2ff;
+  --so-panel-accent-soft: rgba(122, 162, 255, 0.18);
+  --so-panel-danger: #ff8f8f;
+  --so-ui-font: system-ui, -apple-system, "Segoe UI", sans-serif;
+}
+
+
+#so-stars,
+#so-lens {
+  position: fixed;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+/* Gravitational lens: only visible during waves and never captures clicks */
+#so-lens {
+  visibility: hidden;
+  pointer-events: none;
+}
+
+/* ---------- Clock ---------- */
+#so-clock {
+  position: fixed;
+  top: 0;
+  height: 100%;
+  display: flex;
+  box-sizing: border-box;
+  padding: 6vh 5vh;
+  pointer-events: none;
+  user-select: none;
+  z-index: 5;
+}
+#so-clock[hidden] { display: none; }
+#so-clock .so-clock-inner { display: flex; flex-direction: column; transition: transform 60ms linear; }
+#so-clock .so-clock-time {
+  font-size: calc(var(--so-clock-size, 1) * 11vh);
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+#so-clock .so-sec { font-size: 0.42em; opacity: 0.6; }
+#so-clock .so-ampm { font-size: 0.28em; margin-left: 0.35em; opacity: 0.75; letter-spacing: 0.08em; }
+#so-clock .so-clock-date {
+  font-size: calc(var(--so-clock-size, 1) * 2.3vh);
+  margin-top: 0.9em;
+  letter-spacing: 0.14em;
+  opacity: 0.8;
+}
+#so-clock .so-clock-date[hidden] { display: none; }
+/* The song playing: fades in on every track change */
+#so-clock .so-clock-song {
+  margin-top: 1.6em;
+  max-width: 70vw;
+  font-size: calc(var(--so-clock-size, 1) * 2.2vh);
+  line-height: 1.35;
+  opacity: 0;
+  transform: translateY(0.5em);
+  transition: opacity 0.6s ease, transform 0.6s ease;
+}
+#so-clock .so-clock-song.so-show { opacity: 0.85; transform: none; }
+#so-clock .so-song-title {
+  font-size: 1.15em;
+  letter-spacing: 0.04em;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+#so-clock .so-song-artist {
+  opacity: 0.7;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  font-size: 0.8em;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+#so-clock .so-song-artist[hidden] { display: none; }
+#so-clock[data-pos^="top"] { align-items: flex-start; }
+#so-clock[data-pos^="bottom"] { align-items: flex-end; }
+#so-clock[data-pos="center"] { align-items: center; }
+#so-clock[data-pos$="left"] { justify-content: flex-start; }
+#so-clock[data-pos$="center"] { justify-content: center; }
+#so-clock[data-pos$="right"] { justify-content: flex-end; }
+#so-clock[data-pos$="left"] .so-clock-inner { align-items: flex-start; transform-origin: left center; }
+#so-clock[data-pos$="center"] .so-clock-inner { align-items: center; transform-origin: center; }
+#so-clock[data-pos$="right"] .so-clock-inner { align-items: flex-end; transform-origin: right center; }
+
+/* ---------- Hidden menu (M key) ---------- */
+#so-settings {
+  position: fixed;
+  top: 16px;
+  right: 16px;
+  bottom: 16px;
+  width: min(340px, calc(100vw - 32px));
+  display: flex;
+  flex-direction: column;
+  box-sizing: border-box;
+  background: var(--so-panel-bg);
+  border: 1px solid var(--so-panel-border);
+  border-radius: 14px;
+  box-shadow: 0 24px 64px rgba(0, 0, 0, 0.5);
+  backdrop-filter: blur(14px) saturate(1.2);
+  -webkit-backdrop-filter: blur(14px) saturate(1.2);
+  color: var(--so-panel-text);
+  color-scheme: dark;
+  font: 13px/1.4 var(--so-ui-font);
+  overflow: hidden;
+  z-index: 20;
+  transition: background-color 0.3s, border-color 0.3s, color 0.3s;
+}
+#so-settings[hidden] { display: none; }
+#so-settings :focus-visible { outline: 2px solid var(--so-panel-accent); outline-offset: 2px; }
+
+#so-settings header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 14px 16px 12px;
+  border-bottom: 1px solid var(--so-panel-border);
+}
+#so-settings header .so-title { flex: 1; display: flex; flex-direction: column; }
+#so-settings header .so-title strong { font-size: 14px; letter-spacing: 0.02em; }
+#so-settings header .so-title span { font-size: 11px; color: var(--so-panel-muted); }
+
+#so-settings .so-scroll {
+  flex: 1;
+  overflow-y: auto;
+  padding: 2px 16px 16px;
+  scrollbar-width: thin;
+  scrollbar-color: var(--so-panel-scroll) transparent;
+}
+
+/* Language: pinned at the top, outside the collapsible groups */
+#so-settings .so-general { padding: 8px 0 6px; border-bottom: 1px solid var(--so-panel-divider); }
+#so-settings details.so-group { border-bottom: 1px solid var(--so-panel-divider); }
+#so-settings summary,
+#so-settings .so-share h4 {
+  margin: 0;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--so-panel-muted);
+}
+#so-settings summary {
+  list-style: none;
+  cursor: pointer;
+  padding: 13px 0 11px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  user-select: none;
+}
+#so-settings summary::-webkit-details-marker { display: none; }
+#so-settings summary::after {
+  content: '';
+  width: 6px;
+  height: 6px;
+  margin-inline-end: 4px;
+  border-right: 1.5px solid currentColor;
+  border-bottom: 1.5px solid currentColor;
+  transform: rotate(-45deg);
+  transition: transform 0.15s;
+}
+#so-settings[dir="rtl"] summary::after { transform: rotate(135deg); }
+#so-settings details[open] > summary::after { transform: rotate(45deg); }
+#so-settings summary:hover { color: var(--so-panel-text); }
+#so-settings details > :last-child { margin-bottom: 10px; }
+
+#so-settings .so-row {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  align-items: center;
+  gap: 4px 10px;
+  padding: 6px 0;
+}
+#so-settings .so-row[hidden] { display: none; }
+#so-settings .so-row label { cursor: pointer; }
+#so-settings .so-val { color: var(--so-panel-muted); font-size: 12px; font-variant-numeric: tabular-nums; }
+
+#so-settings input[type="range"] {
+  grid-column: 1 / -1;
+  width: 100%;
+  margin: 2px 0 0;
+  accent-color: var(--so-panel-accent);
+  cursor: pointer;
+}
+#so-settings input[type="checkbox"] {
+  width: 16px;
+  height: 16px;
+  margin: 0;
+  accent-color: var(--so-panel-accent);
+  cursor: pointer;
+}
+#so-settings input[type="color"] {
+  width: 40px;
+  height: 24px;
+  padding: 0;
+  border: 1px solid var(--so-panel-border);
+  border-radius: 6px;
+  background: none;
+  cursor: pointer;
+}
+#so-settings select {
+  max-width: 180px;
+  padding: 4px 6px;
+  background: var(--so-panel-raised);
+  color: var(--so-panel-text);
+  border: 1px solid var(--so-panel-border);
+  border-radius: 6px;
+  font: inherit;
+  cursor: pointer;
+}
+#so-settings select option { background: var(--so-panel-solid); color: var(--so-panel-text); }
+
+#so-settings button {
+  padding: 5px 10px;
+  background: var(--so-panel-raised);
+  color: var(--so-panel-text);
+  border: 1px solid var(--so-panel-border);
+  border-radius: 7px;
+  font: inherit;
+  cursor: pointer;
+  transition: border-color 0.15s, background 0.15s;
+}
+#so-settings button:hover:not(:disabled) { border-color: var(--so-panel-accent); }
+#so-settings button:disabled { opacity: 0.45; cursor: default; }
+#so-settings button.so-active,
+#so-settings button.so-primary { background: var(--so-panel-accent-soft); border-color: var(--so-panel-accent); }
+#so-settings button.so-icon { padding: 5px 8px; line-height: 1; }
+#so-settings button[hidden] { display: none; }
+#so-settings .so-btns { display: flex; flex-wrap: wrap; gap: 6px; }
+
+#so-settings .so-audio-src { display: grid; gap: 8px; padding: 2px 0 8px; }
+#so-settings .so-status { font-size: 12px; color: var(--so-panel-muted); }
+#so-settings .so-status.so-error,
+#so-settings .so-io-msg.so-error { color: var(--so-panel-danger); }
+#so-settings .so-meter {
+  display: block;
+  width: 100%;
+  height: 40px;
+  border-radius: 6px;
+  background: var(--so-panel-well);
+}
+
+#so-settings .so-share { display: grid; gap: 8px; padding: 14px 0 4px; }
+#so-settings .so-io { display: grid; gap: 8px; }
+#so-settings .so-io[hidden] { display: none; }
+#so-settings .so-io-msg { font-size: 12px; color: var(--so-panel-muted); }
+#so-settings textarea {
+  width: 100%;
+  min-height: 64px;
+  box-sizing: border-box;
+  padding: 8px;
+  resize: vertical;
+  background: var(--so-panel-well);
+  color: var(--so-panel-text);
+  border: 1px solid var(--so-panel-border);
+  border-radius: 7px;
+  font: 11px/1.4 Consolas, "Cascadia Mono", monospace;
+  word-break: break-all;
+}
+#so-settings .so-hint { margin: 14px 0 0; font-size: 11px; color: var(--so-panel-muted); }
+
+/* ---------- Toasts ---------- */
+#so-toast {
+  position: fixed;
+  left: 50%;
+  bottom: 24px;
+  max-width: calc(100vw - 32px);
+  box-sizing: border-box;
+  padding: 7px 16px;
+  border-radius: 999px;
+  background: var(--so-panel-bg);
+  border: 1px solid var(--so-panel-border);
+  color: var(--so-panel-text);
+  font: 12px var(--so-ui-font);
+  transform: translate(-50%, 8px);
+  opacity: 0;
+  transition: opacity 0.4s, transform 0.4s;
+  pointer-events: none;
+  z-index: 30;
+}
+#so-toast.so-show { opacity: 1; transform: translate(-50%, 0); }
+
+/* Hosts may restyle bare elements (CasaOS uses Bulma) */
+#so-settings strong { color: inherit; font-weight: 700; }
+#so-settings h4 { line-height: 1.4; }

@@ -1,0 +1,167 @@
+/*
+ * Starry Orbit on CasaOS: layering and integration.
+ *
+ * CasaOS draws its background image (#background) as a fixed layer at
+ * z-index 0 and the UI above it (widgets, cards and the top bar at z-index
+ * 10–20, the widgets' frosted backdrops at 0 after it in the page). The
+ * wallpaper canvases are inserted first in <body> on that same level, so the
+ * whole UI — frosted glass included — sits on top of them.
+ */
+#so-stars,
+#so-lens {
+  z-index: 0;
+  pointer-events: none;
+}
+
+html.so-wallpaper-on #background {
+  visibility: hidden !important;
+}
+
+/* Pages without the CasaOS background (login, app windows…) */
+html:not(.so-wallpaper-on) #so-stars,
+html:not(.so-wallpaper-on) #so-lens,
+html:not(.so-wallpaper-on) #so-clock {
+  display: none !important;
+}
+
+#so-clock { z-index: 1; }
+
+/* Settings panel above CasaOS dropdowns, below its modals' backdrop is fine */
+#so-settings {
+  z-index: 45;
+  top: 64px;
+  max-height: calc(100vh - 80px);
+}
+#so-toast { z-index: 46; }
+
+/* ---------- Settings panel in the CasaOS look ----------
+ * The same glass as the dashboard widgets (CasaOS-UI .blur-background:
+ * $backDropColor, $backDropBlur, $backDropBorderRadius and $backDropShadow in
+ * src/assets/scss/common/_variables.scss), white text, the CasaOS font, its
+ * primary blue ($casablue), pill buttons and switches. host.menuStyle = 'host'
+ * keeps the engine from painting the wallpaper colors over these variables.
+ */
+#so-settings,
+#so-toast {
+  --so-panel-bg: rgba(53, 54, 58, 0.4);
+  --so-panel-solid: hsl(228, 4%, 22%);
+  --so-panel-raised: rgba(255, 255, 255, 0.1);
+  --so-panel-well: rgba(0, 0, 0, 0.2);
+  --so-panel-border: rgba(255, 255, 255, 0.16);
+  --so-panel-divider: rgba(255, 255, 255, 0.1);
+  --so-panel-scroll: rgba(255, 255, 255, 0.25);
+  --so-panel-text: #fff;
+  --so-panel-muted: hsla(208, 16%, 85%, 0.75);
+  --so-panel-accent: hsl(216, 90%, 54%);
+  --so-panel-accent-soft: hsla(216, 90%, 54%, 0.3);
+  --so-panel-danger: hsl(18, 98%, 55%);
+  --so-ui-font: BrittiSans, -apple-system, BlinkMacSystemFont, "Segoe UI", "Helvetica Neue", "Noto Sans", sans-serif;
+  border: none;
+  backdrop-filter: blur(5px) saturate(180%);
+  -webkit-backdrop-filter: blur(5px) saturate(180%);
+  box-shadow: rgb(255 255 255 / 12.5%) 0.5px 1px 1px 0 inset;
+}
+#so-settings {
+  border-radius: 10px;
+  box-shadow: rgb(255 255 255 / 12.5%) 0.5px 1px 1px 0 inset, 0 0 17px rgba(0, 0, 0, 0.2);
+  font-size: 0.875rem;
+}
+
+/* Header and groups: the widget title style */
+#so-settings header { border-bottom-color: var(--so-panel-divider); }
+#so-settings header .so-title strong {
+  font-size: 1.125rem;
+  font-weight: 500;
+  letter-spacing: 0;
+  color: hsl(208, 16%, 96%);
+}
+#so-settings header .so-title span { font-size: 0.75rem; }
+#so-settings summary,
+#so-settings .so-share h4 {
+  font-size: 0.875rem;
+  font-weight: 500;
+  letter-spacing: 0;
+  text-transform: none;
+  color: hsl(208, 16%, 96%);
+}
+#so-settings summary:hover { color: #fff; }
+#so-settings .so-val { font-size: 0.8125rem; }
+
+/* Pill buttons; the close button is the round glass button of the widgets */
+#so-settings button {
+  padding: 0.3rem 0.9rem;
+  border: none;
+  border-radius: 9999px;
+  background: rgba(255, 255, 255, 0.12);
+  transition: background 0.15s, opacity 0.15s;
+}
+#so-settings button:hover:not(:disabled) { background: rgba(255, 255, 255, 0.2); }
+#so-settings button.so-active,
+#so-settings button.so-primary { background: var(--so-panel-accent); color: #fff; }
+#so-settings button.so-active:hover:not(:disabled),
+#so-settings button.so-primary:hover:not(:disabled) { background: var(--so-panel-accent); opacity: 0.85; }
+#so-settings button.so-icon {
+  width: 2rem;
+  height: 2rem;
+  padding: 0;
+  background: rgba(123, 123, 123, 0.16);
+}
+
+#so-settings select { border-radius: 0.5rem; }
+
+/* Checkboxes as the CasaOS (Buefy) switches: white outline when off, blue when on */
+#so-settings input[type="checkbox"] {
+  -webkit-appearance: none;
+  appearance: none;
+  position: relative;
+  box-sizing: border-box;
+  width: 32px;
+  height: 20px;
+  border: 1px solid rgba(255, 255, 255, 0.85);
+  border-radius: 9999px;
+  background: transparent;
+  transition: background 0.15s, border-color 0.15s;
+}
+#so-settings input[type="checkbox"]::before {
+  content: '';
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: #fff;
+  transition: transform 0.15s;
+}
+#so-settings input[type="checkbox"]:checked {
+  background: var(--so-panel-accent);
+  border-color: var(--so-panel-accent);
+}
+#so-settings input[type="checkbox"]:checked::before { transform: translateX(12px); }
+
+/* "Customize" next to CasaOS's "Change" (or in a row of its own); a little
+   tighter than CasaOS's pills, and only the sparkle when the row is too narrow */
+#so-customize .button { white-space: nowrap; padding-left: 0.85em; padding-right: 0.85em; }
+#so-customize .so-btn-icon { display: none; }
+#so-customize .so-btn-icon svg { display: block; width: 14px; height: 14px; }
+#so-customize.so-compact .so-btn-text { display: none; }
+#so-customize.so-compact .so-btn-icon { display: inline-flex; }
+#so-customize.so-compact .button { padding-left: 0.6em; padding-right: 0.6em; }
+#so-casaos-settings-row svg { display: block; }
+/* beats Bulma's .is-flex { display: flex !important } */
+#so-casaos-settings-row[hidden] { display: none !important; }
+
+/* The Starry Orbit tile in the CasaOS wallpaper menu: a sparkle marks it as animated */
+#so-wallpaper-tile .image-list-item { position: relative; }
+#so-wallpaper-tile .so-tile-badge {
+  position: absolute;
+  right: 6px;
+  bottom: 6px;
+  display: flex;
+  padding: 4px;
+  border-radius: 999px;
+  background: rgba(0, 0, 0, 0.5);
+  color: #fff;
+  pointer-events: none;
+}
+#so-wallpaper-tile .so-tile-badge svg { display: block; width: 14px; height: 14px; }

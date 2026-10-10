@@ -1,0 +1,299 @@
+/*
+ * Neural Plexus — component styles (canvas, clock, settings menu, toasts).
+ * Every id, class and variable is prefixed with "px-".
+ *
+ * The --px-panel-* colors below are only the fallback: menu.js sets them on the
+ * panel and the toasts from the wallpaper's own colors.
+ */
+:root {
+  --px-panel-bg: rgba(8, 13, 26, 0.86);
+  --px-panel-solid: #0d1426;
+  --px-panel-raised: rgba(255, 255, 255, 0.05);
+  --px-panel-well: rgba(0, 0, 0, 0.28);
+  --px-panel-border: rgba(140, 170, 255, 0.16);
+  --px-panel-divider: rgba(140, 170, 255, 0.08);
+  --px-panel-scroll: rgba(140, 170, 255, 0.25);
+  --px-panel-text: #dde5ff;
+  --px-panel-muted: #8b98bd;
+  --px-panel-accent: #7aa2ff;
+  --px-panel-accent-soft: rgba(122, 162, 255, 0.18);
+  --px-panel-danger: #ff8f8f;
+  --px-ui-font: system-ui, -apple-system, "Segoe UI", sans-serif;
+}
+
+#px-canvas {
+  position: fixed;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+/* ---------- Clock ---------- */
+#px-clock {
+  position: fixed;
+  top: 0;
+  height: 100%;
+  display: flex;
+  box-sizing: border-box;
+  padding: 6vh 5vh;
+  pointer-events: none;
+  user-select: none;
+  z-index: 5;
+}
+#px-clock[hidden] { display: none; }
+#px-clock .px-clock-inner { display: flex; flex-direction: column; transition: transform 60ms linear, opacity 0.8s ease; }
+/* Particles: the network draws the time; its text only holds the place */
+#px-clock.px-particles .px-hm,
+#px-clock.px-particles .px-sec { visibility: hidden; }
+#px-clock.px-aside .px-clock-inner { opacity: 0; }
+#px-clock .px-clock-time {
+  font-size: calc(var(--px-clock-size, 1) * 11vh);
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+#px-clock .px-sec { font-size: 0.42em; opacity: 0.6; }
+#px-clock .px-ampm { font-size: 0.28em; margin-left: 0.35em; opacity: 0.75; letter-spacing: 0.08em; }
+#px-clock .px-clock-date {
+  font-size: calc(var(--px-clock-size, 1) * 2.3vh);
+  margin-top: 0.9em;
+  letter-spacing: 0.14em;
+  opacity: 0.8;
+}
+#px-clock .px-clock-date[hidden] { display: none; }
+/* The song playing: fades in on every track change */
+#px-clock .px-clock-song {
+  margin-top: 1.6em;
+  max-width: 70vw;
+  font-size: calc(var(--px-clock-size, 1) * 2.2vh);
+  line-height: 1.35;
+  opacity: 0;
+  transform: translateY(0.5em);
+  transition: opacity 0.6s ease, transform 0.6s ease;
+}
+#px-clock .px-clock-song.px-show { opacity: 0.85; transform: none; }
+#px-clock .px-song-title {
+  font-size: 1.15em;
+  letter-spacing: 0.04em;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+#px-clock .px-song-artist {
+  opacity: 0.7;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  font-size: 0.8em;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+#px-clock .px-song-artist[hidden] { display: none; }
+#px-clock[data-pos^="top"] { align-items: flex-start; }
+#px-clock[data-pos^="bottom"] { align-items: flex-end; }
+#px-clock[data-pos="center"] { align-items: center; }
+#px-clock[data-pos$="left"] { justify-content: flex-start; }
+#px-clock[data-pos$="center"] { justify-content: center; }
+#px-clock[data-pos$="right"] { justify-content: flex-end; }
+#px-clock[data-pos$="left"] .px-clock-inner { align-items: flex-start; transform-origin: left center; }
+#px-clock[data-pos$="center"] .px-clock-inner { align-items: center; transform-origin: center; }
+#px-clock[data-pos$="right"] .px-clock-inner { align-items: flex-end; transform-origin: right center; }
+
+/* ---------- Hidden menu (M key) ---------- */
+#px-settings {
+  position: fixed;
+  top: 16px;
+  right: 16px;
+  bottom: 16px;
+  width: min(340px, calc(100vw - 32px));
+  display: flex;
+  flex-direction: column;
+  box-sizing: border-box;
+  background: var(--px-panel-bg);
+  border: 1px solid var(--px-panel-border);
+  border-radius: 14px;
+  box-shadow: 0 24px 64px rgba(0, 0, 0, 0.5);
+  backdrop-filter: blur(14px) saturate(1.2);
+  -webkit-backdrop-filter: blur(14px) saturate(1.2);
+  color: var(--px-panel-text);
+  color-scheme: dark;
+  font: 13px/1.4 var(--px-ui-font);
+  overflow: hidden;
+  z-index: 20;
+  transition: background-color 0.3s, border-color 0.3s, color 0.3s;
+}
+#px-settings[hidden] { display: none; }
+#px-settings :focus-visible { outline: 2px solid var(--px-panel-accent); outline-offset: 2px; }
+
+#px-settings header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 14px 16px 12px;
+  border-bottom: 1px solid var(--px-panel-border);
+}
+#px-settings header .px-title { flex: 1; display: flex; flex-direction: column; }
+#px-settings header .px-title strong { font-size: 14px; letter-spacing: 0.02em; }
+#px-settings header .px-title span { font-size: 11px; color: var(--px-panel-muted); }
+
+#px-settings .px-scroll {
+  flex: 1;
+  overflow-y: auto;
+  padding: 2px 16px 16px;
+  scrollbar-width: thin;
+  scrollbar-color: var(--px-panel-scroll) transparent;
+}
+
+/* Language: pinned at the top, outside the collapsible groups */
+#px-settings .px-general { padding: 8px 0 6px; border-bottom: 1px solid var(--px-panel-divider); }
+#px-settings details.px-group { border-bottom: 1px solid var(--px-panel-divider); }
+#px-settings summary,
+#px-settings .px-share h4 {
+  margin: 0;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--px-panel-muted);
+}
+#px-settings summary {
+  list-style: none;
+  cursor: pointer;
+  padding: 13px 0 11px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  user-select: none;
+}
+#px-settings summary::-webkit-details-marker { display: none; }
+#px-settings summary::after {
+  content: '';
+  width: 6px;
+  height: 6px;
+  margin-inline-end: 4px;
+  border-right: 1.5px solid currentColor;
+  border-bottom: 1.5px solid currentColor;
+  transform: rotate(-45deg);
+  transition: transform 0.15s;
+}
+#px-settings[dir="rtl"] summary::after { transform: rotate(135deg); }
+#px-settings details[open] > summary::after { transform: rotate(45deg); }
+#px-settings summary:hover { color: var(--px-panel-text); }
+#px-settings details > :last-child { margin-bottom: 10px; }
+
+#px-settings .px-row {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  align-items: center;
+  gap: 4px 10px;
+  padding: 6px 0;
+}
+#px-settings .px-row[hidden] { display: none; }
+#px-settings .px-row label { cursor: pointer; }
+#px-settings .px-val { color: var(--px-panel-muted); font-size: 12px; font-variant-numeric: tabular-nums; }
+
+#px-settings input[type="range"] {
+  grid-column: 1 / -1;
+  width: 100%;
+  margin: 2px 0 0;
+  accent-color: var(--px-panel-accent);
+  cursor: pointer;
+}
+#px-settings input[type="checkbox"] {
+  width: 16px;
+  height: 16px;
+  margin: 0;
+  accent-color: var(--px-panel-accent);
+  cursor: pointer;
+}
+#px-settings input[type="color"] {
+  width: 40px;
+  height: 24px;
+  padding: 0;
+  border: 1px solid var(--px-panel-border);
+  border-radius: 6px;
+  background: none;
+  cursor: pointer;
+}
+#px-settings select {
+  max-width: 180px;
+  padding: 4px 6px;
+  background: var(--px-panel-raised);
+  color: var(--px-panel-text);
+  border: 1px solid var(--px-panel-border);
+  border-radius: 6px;
+  font: inherit;
+  cursor: pointer;
+}
+#px-settings select option { background: var(--px-panel-solid); color: var(--px-panel-text); }
+
+#px-settings button {
+  padding: 5px 10px;
+  background: var(--px-panel-raised);
+  color: var(--px-panel-text);
+  border: 1px solid var(--px-panel-border);
+  border-radius: 7px;
+  font: inherit;
+  cursor: pointer;
+  transition: border-color 0.15s, background 0.15s;
+}
+#px-settings button:hover:not(:disabled) { border-color: var(--px-panel-accent); }
+#px-settings button:disabled { opacity: 0.45; cursor: default; }
+#px-settings button.px-active,
+#px-settings button.px-primary { background: var(--px-panel-accent-soft); border-color: var(--px-panel-accent); }
+#px-settings button.px-icon { padding: 5px 8px; line-height: 1; }
+#px-settings button[hidden] { display: none; }
+#px-settings .px-btns { display: flex; flex-wrap: wrap; gap: 6px; }
+
+#px-settings .px-audio-src { display: grid; gap: 8px; padding: 2px 0 8px; }
+#px-settings .px-status { font-size: 12px; color: var(--px-panel-muted); }
+#px-settings .px-status.px-error,
+#px-settings .px-io-msg.px-error { color: var(--px-panel-danger); }
+#px-settings .px-meter {
+  display: block;
+  width: 100%;
+  height: 40px;
+  border-radius: 6px;
+  background: var(--px-panel-well);
+}
+
+#px-settings .px-share { display: grid; gap: 8px; padding: 14px 0 4px; }
+#px-settings .px-io { display: grid; gap: 8px; }
+#px-settings .px-io[hidden] { display: none; }
+#px-settings .px-io-msg { font-size: 12px; color: var(--px-panel-muted); }
+#px-settings textarea {
+  width: 100%;
+  min-height: 64px;
+  box-sizing: border-box;
+  padding: 8px;
+  resize: vertical;
+  background: var(--px-panel-well);
+  color: var(--px-panel-text);
+  border: 1px solid var(--px-panel-border);
+  border-radius: 7px;
+  font: 11px/1.4 Consolas, "Cascadia Mono", monospace;
+  word-break: break-all;
+}
+#px-settings .px-hint { margin: 14px 0 0; font-size: 11px; color: var(--px-panel-muted); }
+
+/* ---------- Toasts ---------- */
+#px-toast {
+  position: fixed;
+  left: 50%;
+  bottom: 24px;
+  max-width: calc(100vw - 32px);
+  box-sizing: border-box;
+  padding: 7px 16px;
+  border-radius: 999px;
+  background: var(--px-panel-bg);
+  border: 1px solid var(--px-panel-border);
+  color: var(--px-panel-text);
+  font: 12px var(--px-ui-font);
+  transform: translate(-50%, 8px);
+  opacity: 0;
+  transition: opacity 0.4s, transform 0.4s;
+  pointer-events: none;
+  z-index: 30;
+}
+#px-toast.px-show { opacity: 1; transform: translate(-50%, 0); }
