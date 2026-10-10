@@ -18,4 +18,6 @@ Every `js/lang/<code>.js` must have every English text, only known keys, and kee
 node tests/wallpaper-engine/run.mjs
 ```
 
+It runs the Windows Chrome at its default path; elsewhere, point `CHROME` at a Chrome or Chromium binary (e.g. `CHROME=/usr/bin/chromium node tests/wallpaper-engine/run.mjs`).
+
 Serves the project on port 8765 and loads `tests.html` (themes, import/export, the network and its connections, clicks and overcharged runners (jumps, pops), the cursor, the singularity, every formation and their schedule, the particle clock and the turn of the hour, the audio visualizer (when it comes and goes, formations in the middle of it, the turn of the hour with it), hyperspeed flight and drop detection, album colors and the song in the clock, render resolution, a flat network, every theme, languages, pause) in browser mode and in Wallpaper Engine mode (`?we=1`, with fake WE audio and property events). It uses Chrome's virtual time and the engine's deterministic `Plexus.debug.step()`, so the suite is slow (several minutes in SwiftShader) but stable.

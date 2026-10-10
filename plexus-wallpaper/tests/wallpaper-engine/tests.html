@@ -281,6 +281,7 @@
   check('durante o voo há nós na tela', onScreen() > vis0 * 0.4, { antes: vis0, agora: onScreen() });
   run(3);
   check('voo termina e a rede fica na tela', D.fly.t === -1 && onScreen() > vis0 * 0.6, { t: D.fly.t, antes: vis0, depois: onScreen() });
+  check('pouso: onda de choque num ponto aleatório (não no centro)', Math.hypot(D.fly.x - sz.W / 2, D.fly.y - sz.H / 2) > 1, { x: D.fly.x, y: D.fly.y });
 
   // Drop: o grave some por uns segundos com música tocando e volta com tudo → voo
   app.setValue('audioenabled', true);

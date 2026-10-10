@@ -405,7 +405,7 @@
   // Hyperspeed: on the drop of a song the camera flies through the network
   // ---------------------------------------------------------------------------
   var FLY_IN = 0.5, FLY_HOLD = 1.8, FLY_OUT = 1.6;
-  var fly = { t: -1, level: 0, fired: false };
+  var fly = { t: -1, level: 0, fired: false, x: 0, y: 0 };
 
   function smooth(x) {
     x = x < 0 ? 0 : x > 1 ? 1 : x;
@@ -439,7 +439,15 @@
     } else {
       fly.t = -1;
       fly.level = 0;
-      addShock(W / 2, H / 2, 1.2);
+      // Landing: the shockwave hits a random spot, like the strong bass hits
+      var k = beatSpot(true), A = net.a();
+      fly.x = k >= 0 ? A.SX[k] : W / 2;
+      fly.y = k >= 0 ? A.SY[k] : H / 2;
+      if (k >= 0) {
+        surgeX = fly.x;
+        surgeY = fly.y;
+      }
+      addShock(fly.x, fly.y, 1.2);
     }
   }
 

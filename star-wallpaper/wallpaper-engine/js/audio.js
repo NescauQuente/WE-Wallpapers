@@ -104,7 +104,7 @@
 
     analyser = actx.createAnalyser();
     analyser.fftSize = 4096;
-    analyser.smoothingTimeConstant = 0.55;
+    analyser.smoothingTimeConstant = 0.3;
     analyser.minDecibels = -85;
     analyser.maxDecibels = -25;
     srcNode = actx.createMediaStreamSource(s);
@@ -174,8 +174,9 @@
   function update(dt, enabled, sens) {
     pump();
 
-    var attack = 1 - Math.exp(-dt * 30);
-    var decay = 1 - Math.exp(-dt * 6);
+    // A hit shows up at once (within a frame); it fades out more gently
+    var attack = 1 - Math.exp(-dt * 80);
+    var decay = 1 - Math.exp(-dt * 8);
     var peakDecay = Math.exp(-dt * 0.15);
     var sum = 0, rawSum = 0, bassSum = 0, trebleSum = 0;
 

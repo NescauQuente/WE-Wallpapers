@@ -2,6 +2,7 @@
 // Serves the project on :8765 and loads each test page in a headless Chrome
 // with virtual time, then reads the results the page writes into #out.
 //   node tests/wallpaper-engine/run.mjs
+// Set CHROME to the browser binary when it is not the default Windows Chrome.
 import { spawn } from 'node:child_process';
 import fs from 'node:fs';
 import http from 'node:http';
@@ -11,7 +12,7 @@ import { fileURLToPath } from 'node:url';
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = path.join(HERE, '..', '..');
-const CHROME = 'C:/Program Files/Google/Chrome/Application/chrome.exe';
+const CHROME = process.env.CHROME || 'C:/Program Files/Google/Chrome/Application/chrome.exe';
 const PORT = 8765;
 const TYPES = { '.html': 'text/html; charset=utf-8', '.js': 'text/javascript; charset=utf-8', '.css': 'text/css', '.json': 'application/json' };
 
