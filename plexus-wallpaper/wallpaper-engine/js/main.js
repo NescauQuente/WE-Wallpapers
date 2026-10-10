@@ -85,9 +85,12 @@
         s.fx.split(' ').forEach(function (f) { fx[f] = true; });
       }
     });
+    // A new frequency counts from now (not after the old, longer wait)
+    var freqChanged = !first && Number(eff.shapefreq) !== Number(next.shapefreq);
     eff = next;
     derive();
     menu.setTheme(cfg);
+    if (freqChanged) nextShapeTime();
 
     // Language: explicit setting, or automatic (WE language, then the system's)
     var lang = i18n.resolve(cfg.language, weLang);

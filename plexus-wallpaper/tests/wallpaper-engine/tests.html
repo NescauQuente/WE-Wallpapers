@@ -138,7 +138,7 @@
   var p0 = net.pops().n;
   net.launch(lone, id, 5, A0.SX[lone], A0.SY[lone]);
   check('sem nenhum nó por perto, o corredor estoura', net.pops().n === p0 + 1, net.pops().n - p0);
-  var size1 = net.pops().s[net.pops().n - 1];
+  var size1 = net.pops().s[net.pops().n - 1], ss1 = A0.SS[lone];
   run(1);
   // Força da sobrecarga: estouro maior
   app.setValue('surgeamt', 2.5);
@@ -146,7 +146,7 @@
   A0 = net.a(); lone = net.nearest(sz.W / 2, sz.H / 2); id = net.newSurge();
   for (q0 = 0; q0 < net.n(); q0++) if (q0 !== lone) A0.SURGE[q0] = id;
   net.launch(lone, id, 5, A0.SX[lone], A0.SY[lone]);
-  check('força da sobrecarga aumenta o estouro', net.pops().s[net.pops().n - 1] / A0.SS[lone] > size1 / A0.SS[lone] * 1.3, { antes: size1, depois: net.pops().s[net.pops().n - 1] });
+  check('força da sobrecarga aumenta o estouro', net.pops().s[net.pops().n - 1] / A0.SS[lone] > size1 / ss1 * 1.3, { antes: size1, depois: net.pops().s[net.pops().n - 1] });
   app.setValue('surgeamt', 1);
   run(1);
   app.setValue('signals', false);
@@ -159,12 +159,15 @@
   window.dispatchEvent(new MouseEvent('mousemove', { clientX: innerWidth / 2, clientY: innerHeight / 2 }));
   run(1);
   A = net.a();
-  var left = 0, right = 0;
+  // Between its ring (closer in, nodes are held off) and its radius, the nodes move toward it
+  var Rc = D.cfg.mouseradius * sz.unit, inward = 0, nIn = 0;
   for (var k = 0; k < net.n(); k++) {
-    var dx = A.SX[k] - sz.W / 2, dy = A.SY[k] - sz.H / 2;
-    if (Math.abs(dy) < sz.H * 0.1 && Math.abs(dx) < 200 * sz.unit && Math.abs(dx) > 20 * sz.unit) { if (dx < 0) left += A.IX[k]; else right += A.IX[k]; }
+    var dx = A.SX[k] - sz.W / 2, dy = A.SY[k] - sz.H / 2, dc = Math.hypot(dx, dy);
+    if (A.LOCK[k] || dc < Rc * 0.45 || dc > Rc * 0.9) continue;
+    inward -= (A.IX[k] * dx + A.IY[k] * dy) / dc;
+    nIn++;
   }
-  check('cursor atrai os nós', left >= 0 && right <= 0 && left - right > 0, { left: left, right: right });
+  check('cursor atrai os nós', nIn > 0 && inward > 0, { nodes: nIn, inward: inward });
   run(6);
   A = net.a();
   var nearC = [], tight = 0;
@@ -215,7 +218,7 @@
   D.relayout();
   app.setValue('shapefreq', 1);
   var c0 = D.shapeCount();
-  run(70, 0.25);
+  run(90, 0.25);
   check('formações aparecem sozinhas', D.shapeCount() > c0, D.shapeCount() - c0);
   app.setValue('shapes', false);
   run(0.2);
@@ -355,6 +358,8 @@
   Date.now = function () { return frozen2; };
   app.setValue('clock', true);
   D.timeShift(0);
+  // Turning the particle clock on rebuilds the network: the visualizer comes back first
+  song(1);
   D.hourIn(5);
   song(1.5);
   check('hora cheia com visualizador: ele sobe e o relógio fica embaixo',

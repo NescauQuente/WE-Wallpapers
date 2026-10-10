@@ -57,6 +57,7 @@
   function nearEnd() {
     return view.zNear + (-0.72 * view.F - view.zNear) * view.fly;
   }
+  var lastNear = NaN;    // nearEnd() the frame before
 
   function alloc(n) {
     X = new Float32Array(n); Y = new Float32Array(n); Z = new Float32Array(n);
@@ -118,6 +119,7 @@
     view.zFar = 0.6 * dz;
     view.zr = view.zFar - view.zNear;
     view.margin = 0.6 * L + 0.03 * H;
+    lastNear = NaN;
     N = count;
     alloc(N);
     for (var i = 0; i < N; i++) {
@@ -152,8 +154,21 @@
     var turn = 1 - Math.exp(-dt * 0.6), damp = Math.exp(-dt * 1.6), wander = dt * 0.12, flow = 1 - Math.exp(-dt * 3);
     var W2 = view.W / 2 + view.margin, H2 = view.H / 2 + view.margin;
     var zN = nearEnd(), zF = view.zFar, zr = view.zFar - zN, flat = view.zr < 1;
+    // The near end moves with hyperspeed: the depth range stretches and
+    // shrinks with it, so the nodes stay spread out (instead of all wrapping
+    // to the far end at once when it comes back); they keep their place on
+    // screen meanwhile
+    var stretch = !flat && lastNear === lastNear && zN !== lastNear ? zr / (zF - lastNear) : 1;
+    lastNear = zN;
     for (var i = 0; i < N; i++) {
       if (LOCK[i]) continue;
+      if (stretch !== 1) {
+        var z0 = Z[i];
+        Z[i] = zF - (zF - z0) * stretch;
+        var ks = scaleAt(z0) / scaleAt(Z[i]);
+        X[i] *= ks;
+        Y[i] *= ks;
+      }
       if (Math.random() < wander) pickDrift(i);
       VX[i] += (TX[i] - VX[i]) * turn;
       VY[i] += (TY[i] - VY[i]) * turn;
@@ -198,9 +213,16 @@
         X[i] *= k;
         Y[i] *= k;
       }
-      // Leaving the screen sideways: in again on the other side
+      // Leaving the screen sideways: in again on the other side. In
+      // hyperspeed (everything rushes outward) back in far away anywhere
+      // instead, or the nodes would pile up along the edges
       var s = scaleAt(Z[i]), hx = W2 / s, hy = H2 / s;
-      if (X[i] > hx) X[i] -= 2 * hx;
+      if (view.fly > 0.05 && !flat && (X[i] > hx || X[i] < -hx || Y[i] > hy || Y[i] < -hy)) {
+        Z[i] = zF - Math.random() * 0.1 * zr;
+        s = scaleAt(Z[i]);
+        X[i] = (Math.random() * 2 - 1) * W2 / s;
+        Y[i] = (Math.random() * 2 - 1) * H2 / s;
+      } else if (X[i] > hx) X[i] -= 2 * hx;
       else if (X[i] < -hx) X[i] += 2 * hx;
       if (Y[i] > hy) Y[i] -= 2 * hy;
       else if (Y[i] < -hy) Y[i] += 2 * hy;
