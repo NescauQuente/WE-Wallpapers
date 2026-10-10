@@ -9,4 +9,4 @@ Animated wallpapers for Wallpaper Engine (**Web** type) that also run in a brows
 
 On CasaOS they run through **Live Wallpapers**, a mod that provides the Wallpaper Engine web API; it lives in its own repository, [NescauQuente/CasaMODs](https://github.com/NescauQuente/CasaMODs) (`casaos-live-wallpapers/`).
 
-Each folder has its own README (and a `CLAUDE.md` with the working rules for that project).
+Each wallpaper folder holds only the wallpaper (copy it as is into Wallpaper Engine or CasaOS) and its README. Development files (the `project.json` generator and the tests) live in `dev/<folder>/`.
