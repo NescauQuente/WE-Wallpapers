@@ -1,0 +1,258 @@
+/*
+ * Lyric Stage — page styles (the layers, settings menu, toasts).
+ * Every id, class and variable is prefixed with "ls-". The lyrics and the song
+ * card are styled in css/stage.css.
+ *
+ * Layers, bottom to top: #ls-image (the user's own idle image) < #ls-canvas
+ * (the background; transparent where the image must show) < #ls-stage (lyrics
+ * and song card) < the menu < the toasts.
+ *
+ * The --ls-panel-* colors below are only the fallback: menu.js sets them on the
+ * panel and the toasts from the wallpaper's own colors.
+ */
+:root {
+  --ls-panel-bg: rgba(8, 13, 26, 0.86);
+  --ls-panel-solid: #0d1426;
+  --ls-panel-raised: rgba(255, 255, 255, 0.05);
+  --ls-panel-well: rgba(0, 0, 0, 0.28);
+  --ls-panel-border: rgba(140, 170, 255, 0.16);
+  --ls-panel-divider: rgba(140, 170, 255, 0.08);
+  --ls-panel-scroll: rgba(140, 170, 255, 0.25);
+  --ls-panel-text: #dde5ff;
+  --ls-panel-muted: #8b98bd;
+  --ls-panel-accent: #7aa2ff;
+  --ls-panel-accent-soft: rgba(122, 162, 255, 0.18);
+  --ls-panel-danger: #ff8f8f;
+  --ls-ui-font: "Segoe UI Variable Text", "Segoe UI", system-ui, -apple-system, sans-serif;
+}
+
+/* ---------- Layers ---------- */
+#ls-image,
+#ls-canvas,
+#ls-stage {
+  position: fixed;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+
+/* The user's own wallpaper ("My image"): main.js sets background-image. It
+   only shows where the canvas is transparent (the "My image" idle look) */
+#ls-image {
+  z-index: 0;
+  background-position: center;
+  background-repeat: no-repeat;
+  background-size: cover;
+  pointer-events: none;
+}
+#ls-image[hidden] { display: none; }
+
+#ls-canvas {
+  z-index: 1;
+  display: block;
+}
+
+#ls-stage {
+  z-index: 2;
+  overflow: hidden;
+  pointer-events: none;
+  user-select: none;
+}
+
+/* ---------- Hidden menu (M key) ---------- */
+#ls-settings {
+  position: fixed;
+  top: 16px;
+  right: 16px;
+  bottom: 16px;
+  width: min(340px, calc(100vw - 32px));
+  display: flex;
+  flex-direction: column;
+  box-sizing: border-box;
+  background: var(--ls-panel-bg);
+  border: 1px solid var(--ls-panel-border);
+  border-radius: 14px;
+  box-shadow: 0 24px 64px rgba(0, 0, 0, 0.5);
+  backdrop-filter: blur(14px) saturate(1.2);
+  -webkit-backdrop-filter: blur(14px) saturate(1.2);
+  color: var(--ls-panel-text);
+  color-scheme: dark;
+  font: 13px/1.4 var(--ls-ui-font);
+  overflow: hidden;
+  z-index: 20;
+  transition: background-color 0.3s, border-color 0.3s, color 0.3s;
+}
+#ls-settings[hidden] { display: none; }
+#ls-settings :focus-visible { outline: 2px solid var(--ls-panel-accent); outline-offset: 2px; }
+
+#ls-settings header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 14px 16px 12px;
+  border-bottom: 1px solid var(--ls-panel-border);
+}
+#ls-settings header .ls-title { flex: 1; display: flex; flex-direction: column; }
+#ls-settings header .ls-title strong { font-size: 14px; letter-spacing: 0.02em; }
+#ls-settings header .ls-title span { font-size: 11px; color: var(--ls-panel-muted); }
+
+#ls-settings .ls-scroll {
+  flex: 1;
+  overflow-y: auto;
+  padding: 2px 16px 16px;
+  scrollbar-width: thin;
+  scrollbar-color: var(--ls-panel-scroll) transparent;
+}
+
+/* Language: pinned at the top, outside the collapsible groups */
+#ls-settings .ls-general { padding: 8px 0 6px; border-bottom: 1px solid var(--ls-panel-divider); }
+#ls-settings details.ls-group { border-bottom: 1px solid var(--ls-panel-divider); }
+#ls-settings summary,
+#ls-settings .ls-share h4 {
+  margin: 0;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--ls-panel-muted);
+}
+#ls-settings summary {
+  list-style: none;
+  cursor: pointer;
+  padding: 13px 0 11px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  user-select: none;
+}
+#ls-settings summary::-webkit-details-marker { display: none; }
+#ls-settings summary::after {
+  content: '';
+  width: 6px;
+  height: 6px;
+  margin-inline-end: 4px;
+  border-right: 1.5px solid currentColor;
+  border-bottom: 1.5px solid currentColor;
+  transform: rotate(-45deg);
+  transition: transform 0.15s;
+}
+#ls-settings[dir="rtl"] summary::after { transform: rotate(135deg); }
+#ls-settings details[open] > summary::after { transform: rotate(45deg); }
+#ls-settings summary:hover { color: var(--ls-panel-text); }
+#ls-settings details > :last-child { margin-bottom: 10px; }
+
+#ls-settings .ls-row {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  align-items: center;
+  gap: 4px 10px;
+  padding: 6px 0;
+}
+#ls-settings .ls-row[hidden] { display: none; }
+#ls-settings .ls-row label { cursor: pointer; }
+#ls-settings .ls-val { color: var(--ls-panel-muted); font-size: 12px; font-variant-numeric: tabular-nums; }
+
+#ls-settings input[type="range"] {
+  grid-column: 1 / -1;
+  width: 100%;
+  margin: 2px 0 0;
+  accent-color: var(--ls-panel-accent);
+  cursor: pointer;
+}
+#ls-settings input[type="checkbox"] {
+  width: 16px;
+  height: 16px;
+  margin: 0;
+  accent-color: var(--ls-panel-accent);
+  cursor: pointer;
+}
+#ls-settings input[type="color"] {
+  width: 40px;
+  height: 24px;
+  padding: 0;
+  border: 1px solid var(--ls-panel-border);
+  border-radius: 6px;
+  background: none;
+  cursor: pointer;
+}
+#ls-settings select {
+  max-width: 180px;
+  padding: 4px 6px;
+  background: var(--ls-panel-raised);
+  color: var(--ls-panel-text);
+  border: 1px solid var(--ls-panel-border);
+  border-radius: 6px;
+  font: inherit;
+  cursor: pointer;
+}
+#ls-settings select option { background: var(--ls-panel-solid); color: var(--ls-panel-text); }
+
+#ls-settings button {
+  padding: 5px 10px;
+  background: var(--ls-panel-raised);
+  color: var(--ls-panel-text);
+  border: 1px solid var(--ls-panel-border);
+  border-radius: 7px;
+  font: inherit;
+  cursor: pointer;
+  transition: border-color 0.15s, background 0.15s;
+}
+#ls-settings button:hover:not(:disabled) { border-color: var(--ls-panel-accent); }
+#ls-settings button:disabled { opacity: 0.45; cursor: default; }
+#ls-settings button.ls-active,
+#ls-settings button.ls-primary { background: var(--ls-panel-accent-soft); border-color: var(--ls-panel-accent); }
+#ls-settings button.ls-icon { padding: 5px 8px; line-height: 1; }
+#ls-settings button[hidden] { display: none; }
+#ls-settings .ls-btns { display: flex; flex-wrap: wrap; gap: 6px; }
+
+#ls-settings .ls-audio-src { display: grid; gap: 8px; padding: 2px 0 8px; }
+#ls-settings .ls-status { font-size: 12px; color: var(--ls-panel-muted); }
+#ls-settings .ls-status.ls-error,
+#ls-settings .ls-io-msg.ls-error { color: var(--ls-panel-danger); }
+#ls-settings .ls-meter {
+  display: block;
+  width: 100%;
+  height: 40px;
+  border-radius: 6px;
+  background: var(--ls-panel-well);
+}
+
+#ls-settings .ls-share { display: grid; gap: 8px; padding: 14px 0 4px; }
+#ls-settings .ls-io { display: grid; gap: 8px; }
+#ls-settings .ls-io[hidden] { display: none; }
+#ls-settings .ls-io-msg { font-size: 12px; color: var(--ls-panel-muted); }
+#ls-settings textarea {
+  width: 100%;
+  min-height: 64px;
+  box-sizing: border-box;
+  padding: 8px;
+  resize: vertical;
+  background: var(--ls-panel-well);
+  color: var(--ls-panel-text);
+  border: 1px solid var(--ls-panel-border);
+  border-radius: 7px;
+  font: 11px/1.4 Consolas, "Cascadia Mono", monospace;
+  word-break: break-all;
+}
+#ls-settings .ls-hint { margin: 14px 0 0; font-size: 11px; color: var(--ls-panel-muted); }
+
+/* ---------- Toasts ---------- */
+#ls-toast {
+  position: fixed;
+  left: 50%;
+  bottom: 24px;
+  max-width: calc(100vw - 32px);
+  box-sizing: border-box;
+  padding: 7px 16px;
+  border-radius: 999px;
+  background: var(--ls-panel-bg);
+  border: 1px solid var(--ls-panel-border);
+  color: var(--ls-panel-text);
+  font: 12px var(--ls-ui-font);
+  transform: translate(-50%, 8px);
+  opacity: 0;
+  transition: opacity 0.4s, transform 0.4s;
+  pointer-events: none;
+  z-index: 30;
+}
+#ls-toast.ls-show { opacity: 1; transform: translate(-50%, 0); }
