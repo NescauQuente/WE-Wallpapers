@@ -6,6 +6,7 @@ Animated wallpapers for Wallpaper Engine (**Web** type) that also run in a brows
 |---|---|
 | `star-wallpaper/` | **Starry Orbit**: a starfield with a black hole, nebulae, hyperspace and rare events |
 | `plexus-wallpaper/` | **Neural Plexus**: a living 3D network with signals, formations, an audio visualizer and a particle clock |
+| `lyric-wallpaper/` | **Lyric Stage**: a plain desktop wallpaper that turns into a stage when a song plays: a background in the album colors and the song's lyrics in sync (from LRCLIB) |
 
 On CasaOS they run through **Live Wallpapers**, a mod that provides the Wallpaper Engine web API; it lives in its own repository, [UsuarioDeJava/CasaMODs](https://github.com/UsuarioDeJava/CasaMODs) (`casaos-live-wallpapers/`).
 

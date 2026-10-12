@@ -1,0 +1,787 @@
+<!DOCTYPE html>
+<html>
+<head><meta charset="UTF-8"><title>tests</title>
+<link rel="stylesheet" href="/lyric-wallpaper/css/lyric.css">
+<link rel="stylesheet" href="/lyric-wallpaper/css/stage.css"></head>
+<body>
+<div id="ls-image"></div>
+<canvas id="ls-canvas"></canvas>
+<div id="ls-stage"></div>
+<pre id="out">running</pre>
+<script>
+  // Lyric Stage tests (browser mode, and Wallpaper Engine mode with ?we=1).
+  // Every lyric line here is invented. Nothing reaches lrclib.net: the page
+  // answers the lookups itself (fake lrclib below).
+  window.__errs = [];
+  window.addEventListener('error', function (e) { window.__errs.push(e.message + ' @' + (e.filename || '').split('/').pop() + ':' + e.lineno); });
+  window.addEventListener('unhandledrejection', function (e) { window.__errs.push('unhandled rejection: ' + (e.reason && e.reason.message || e.reason)); });
+  var WE = location.search.indexOf('we=1') >= 0;
+  try { localStorage.clear(); } catch (e) {}
+  // Wallpaper Engine mode: its listeners, registered before audio.js and media.js load
+  window.__we = {};
+  if (WE) {
+    window.wallpaperRegisterAudioListener = function (cb) { window.__we.audio = cb; };
+    window.wallpaperMediaIntegration = { PLAYBACK_STOPPED: 0, PLAYBACK_PLAYING: 1, PLAYBACK_PAUSED: 2 };
+    ['Status', 'Properties', 'Thumbnail', 'Playback', 'Timeline'].forEach(function (n) {
+      window['wallpaperRegisterMedia' + n + 'Listener'] = function (cb) { window.__we[n.toLowerCase()] = cb; };
+    });
+  }
+</script>
+<script src="/lyric-wallpaper/js/util.js"></script>
+<script src="/lyric-wallpaper/js/settings.js"></script><script src="/lyric-wallpaper/js/i18n.js"></script>
+<script src="/lyric-wallpaper/js/lang/ar.js"></script><script src="/lyric-wallpaper/js/lang/be.js"></script><script src="/lyric-wallpaper/js/lang/bg.js"></script><script src="/lyric-wallpaper/js/lang/ca.js"></script><script src="/lyric-wallpaper/js/lang/cs.js"></script><script src="/lyric-wallpaper/js/lang/de.js"></script><script src="/lyric-wallpaper/js/lang/el.js"></script><script src="/lyric-wallpaper/js/lang/es.js"></script><script src="/lyric-wallpaper/js/lang/fr.js"></script><script src="/lyric-wallpaper/js/lang/hr.js"></script><script src="/lyric-wallpaper/js/lang/hu.js"></script><script src="/lyric-wallpaper/js/lang/id.js"></script><script src="/lyric-wallpaper/js/lang/it.js"></script><script src="/lyric-wallpaper/js/lang/ja.js"></script><script src="/lyric-wallpaper/js/lang/ko.js"></script><script src="/lyric-wallpaper/js/lang/nl.js"></script><script src="/lyric-wallpaper/js/lang/no.js"></script><script src="/lyric-wallpaper/js/lang/pl.js"></script><script src="/lyric-wallpaper/js/lang/pt.js"></script><script src="/lyric-wallpaper/js/lang/pt-pt.js"></script><script src="/lyric-wallpaper/js/lang/ro.js"></script><script src="/lyric-wallpaper/js/lang/ru.js"></script><script src="/lyric-wallpaper/js/lang/sk.js"></script><script src="/lyric-wallpaper/js/lang/sl.js"></script><script src="/lyric-wallpaper/js/lang/sv.js"></script><script src="/lyric-wallpaper/js/lang/tr.js"></script><script src="/lyric-wallpaper/js/lang/uk.js"></script><script src="/lyric-wallpaper/js/lang/vi.js"></script><script src="/lyric-wallpaper/js/lang/zh-cn.js"></script><script src="/lyric-wallpaper/js/lang/zh-tw.js"></script>
+<script src="/lyric-wallpaper/js/audio.js"></script>
+<script src="/lyric-wallpaper/js/media.js"></script>
+<script src="/lyric-wallpaper/js/songclock.js"></script>
+<script src="/lyric-wallpaper/js/lyrics.js"></script>
+<script>
+  // A fake lrclib.net with invented songs (installed before main.js)
+  var LRC_A = [
+    '[00:02.00]First test line',
+    '[00:05.00]The second line comes in',
+    '[00:08.00]A third invented line',
+    '[00:11.00]Number four is made up too',
+    '[00:14.00]The fifth test line is a much longer invented sentence that has to wrap onto a second row of the stage',
+    '[00:20.00]',
+    '[00:30.00]Back after the pause',
+    '[00:33.00]The last test line'
+  ].join('\n');
+  var LRC_CHAIN = '[00:02.00]Opening test line\n[00:05.00]A sung test line with a long tail\n[00:17.00]\n[00:27.00]After the long marker';
+  var LRC_SHORT = '[00:01.00]Short test line one\n[00:04.00]Short test line two\n[00:07.00]Short test line three';
+  var LRC_COUNT = '[00:02.00]Counted from the start\n[00:06.00]Still counting along\n[00:10.00]Third counted line';
+  var DB = {};
+  function entry(track, artist, dur, extra) {
+    var e = { id: Object.keys(DB).length + 1, trackName: track, artistName: artist, albumName: 'Test Album', duration: dur, instrumental: false, plainLyrics: null, syncedLyrics: null };
+    Object.keys(extra || {}).forEach(function (k) { e[k] = extra[k]; });
+    DB[track.toLowerCase() + '|' + artist.toLowerCase()] = e;
+  }
+  entry('Lantern Test', 'The Invented Band', 200, { syncedLyrics: LRC_A, plainLyrics: 'First test line' });
+  entry('Search Only Test', 'The Invented Band', 100, { syncedLyrics: LRC_SHORT, getMiss: true });
+  entry('Cors Test', 'The Invented Band', 100, { syncedLyrics: LRC_SHORT });
+  entry('Busy Test', 'The Invented Band', 100, { syncedLyrics: LRC_SHORT });
+  entry('Plain Test', 'Nobody Real', 180, { plainLyrics: 'An invented plain line\nAnother plain test line\nThe plain end' });
+  entry('Quiet Test', 'Ambient Nobody', 150, { instrumental: true });
+  entry('Pause Chain Test', 'Test Artist', 60, { syncedLyrics: LRC_CHAIN });
+  entry('Skip One', 'Skipper', 90, { syncedLyrics: LRC_SHORT });
+  entry('Skip Two', 'Skipper', 90, { syncedLyrics: LRC_SHORT });
+  entry('Skip Three', 'Skipper', 90, { syncedLyrics: LRC_SHORT });
+  entry('No Clock Test', 'Quiet Player', 120, { syncedLyrics: LRC_COUNT });
+  entry('Album Test', 'Color Band', 120, { syncedLyrics: LRC_SHORT });
+  // Invented Arabic and Hebrew test lines ("an invented test line", "a made-up line for testing")
+  entry('Rtl Test', 'Nobody', 60, { syncedLyrics: '[00:01.00]\u0633\u0637\u0631 \u062a\u062c\u0631\u064a\u0628\u064a \u0645\u062e\u062a\u0631\u0639\n[00:05.00]\u05e9\u05d5\u05e8\u05d4 \u05de\u05de\u05e6\u05d0\u05ea \u05dc\u05d1\u05d3\u05d9\u05e7\u05d4' });
+  var BROKEN = { 'broken test': true, 'error test': true };
+  var fakeLog = [], fakeOpts = [], fakeMode = { offline: false, cors: false, busy: 0 };
+  function fakeResp(code, data, hdr) {
+    return Promise.resolve({
+      ok: code >= 200 && code < 300, status: code,
+      headers: { get: function (k) { return hdr && hdr[k] !== undefined ? hdr[k] : null; } },
+      json: function () { return Promise.resolve(data); }
+    });
+  }
+  Lyric.lyrics.fetch = function (url, opts) {
+    fakeLog.push(url);
+    fakeOpts.push(opts || {});
+    if (fakeMode.offline || (fakeMode.cors && opts && opts.headers)) return Promise.reject(new TypeError('Failed to fetch'));
+    if (fakeMode.busy > 0) {
+      fakeMode.busy--;
+      return fakeResp(429, {}, { 'Retry-After': '0.2' });
+    }
+    var u = new URL(url), p = u.searchParams, get = /\/get$/.test(u.pathname);
+    var track = (p.get('track_name') || '').toLowerCase(), artist = (p.get('artist_name') || '').toLowerCase(), q = (p.get('q') || '').toLowerCase();
+    if (BROKEN[track] || Object.keys(BROKEN).some(function (b) { return q && q.indexOf(b) >= 0; })) return fakeResp(500, {});
+    var hits = Object.keys(DB).filter(function (k) {
+      var t = k.split('|')[0], a = k.split('|')[1];
+      if (get) return t === track && a === artist && !DB[k].getMiss;
+      return q ? q.indexOf(t) >= 0 : t === track && (!artist || a === artist);
+    }).map(function (k) { return DB[k]; });
+    if (get) return hits.length ? fakeResp(200, hits[0]) : fakeResp(404, { code: 404, name: 'TrackNotFound' });
+    return fakeResp(200, hits);
+  };
+</script>
+<script>
+  // Wallpaper Engine may report the song before main.js runs (paused here,
+  // so the wallpaper still starts idle)
+  if (WE) {
+    __we.properties({ title: 'Early Test', artist: 'The Invented Band', albumTitle: 'Test Album' });
+    __we.playback({ state: 2 });
+    __we.timeline({ position: 12, duration: 100 });
+  }
+</script>
+<script src="/lyric-wallpaper/js/gfx.js"></script>
+<script src="/lyric-wallpaper/js/stage.js"></script>
+<script src="/lyric-wallpaper/js/menu.js"></script>
+<script src="/lyric-wallpaper/js/main.js"></script>
+<script>
+(async function () {
+  var results = [], S = Lyric, app = S.app, set = S.settings, D = S.debug, I = S.i18n, ST = S.stage;
+  var FAKE = S.lyrics.fetch;
+  function check(name, ok, info) { results.push((ok ? 'PASS ' : 'FAIL ') + name + (ok ? '' : '  → ' + JSON.stringify(info))); }
+  function note(msg) { results.push('INFO ' + msg); }
+  function eff() { return D.effective(); }
+  function st() { return D.state(); }
+  function sleep(ms) { return new Promise(function (r) { setTimeout(r, ms); }); }
+  function run(sec, dt) { dt = dt || 0.1; for (var f = 0, n = Math.round(sec / dt); f < n; f++) D.step(dt); }
+  // A lookup: 600 ms of debounce, then the fake answers at once
+  async function settle() { await sleep(900); D.step(0.05); }
+  function near(a, b, eps) { return Math.abs(a - b) <= (eps || 1e-6); }
+  function rgbOf(css) { return (String(css).match(/[\d.]+/g) || []).slice(0, 3).map(Number); }
+  function bg() { return getComputedStyle(document.body).backgroundColor; }
+  function panel() { return document.getElementById('ls-settings'); }
+  function title() { return document.querySelector('#ls-settings header .ls-title span').textContent; }
+  function lbl(k) { return document.querySelector('label[for=ls-opt-' + k + ']').textContent; }
+  function since(n) { return fakeLog.slice(n).join(' '); }
+  function png(a, b) {
+    var c = document.createElement('canvas');
+    c.width = 64; c.height = 36;
+    var x = c.getContext('2d'), g = x.createLinearGradient(0, 0, 64, 36);
+    g.addColorStop(0, a); g.addColorStop(1, b);
+    x.fillStyle = g; x.fillRect(0, 0, 64, 36);
+    return c.toDataURL('image/png');
+  }
+
+  // Media events: in Wallpaper Engine mode through its listeners, in the
+  // browser through the same functions (media.js exports them)
+  var M = WE ? {
+    status: function (e) { __we.status(e); }, props: function (e) { __we.properties(e); }, thumb: function (e) { __we.thumbnail(e); },
+    play: function (e) { __we.playback(e); }, timeline: function (e) { __we.timeline(e); }
+  } : { status: S.media.setStatus, props: S.media.setProperties, thumb: S.media.setThumbnail, play: S.media.setPlayback, timeline: S.media.setTimeline };
+  function song(t, a) { M.props({ title: t, artist: a, albumTitle: 'Test Album' }); }
+  function play(on) { M.play({ state: on === 'stop' ? 0 : on ? 1 : 2 }); }
+  function tl(p, d) { M.timeline({ position: p, duration: d }); }
+  var SOUND = [], SILENT = [];
+  for (var z = 0; z < 128; z++) { SOUND.push(0.3); SILENT.push(0); }
+  function sound(on) { (WE ? __we.audio : S.audio.feed)(on ? SOUND : SILENT); }
+  // Back to the wallpaper (the song paused, the show faded out)
+  function rest() { play(false); sound(false); run(D.cfg.returndelay + D.cfg.transition + 0.3); }
+
+  try {
+    // ---------------------------------------------------------------------
+    // Start
+    // ---------------------------------------------------------------------
+    check('mode detected', app.isWE === WE, app.isWE);
+    check('WebGL2: the shaders compile', D.renderer() === 'webgl2', D.renderer());
+    if (WE) check('WE: media and audio listeners registered', ['audio', 'status', 'properties', 'thumbnail', 'playback', 'timeline'].every(function (k) { return typeof __we[k] === 'function'; }), Object.keys(__we));
+    check('starts idle, on the Windows 11 style', st().mode === 'idle' && st().idle === 'win11', st());
+    check('page background: the look\'s base color', bg() === 'rgb(221, 232, 245)', bg());
+    check('menu built, light panel on the light look', !!panel() && panel().style.colorScheme === 'light', panel() && panel().style.colorScheme);
+
+    // The automatic frame loop and the pause (headless Chrome's virtual time
+    // hardly runs requestAnimationFrame: the loop is checked, not counted)
+    check('the frame loop runs', st().loop && !st().paused, st());
+    window.wallpaperPropertyListener.setPaused(true);
+    check('paused: the loop stops', st().paused && !st().loop, st());
+    window.wallpaperPropertyListener.setPaused(true);
+    window.wallpaperPropertyListener.setPaused(false);
+    check('resumed: the loop runs again', !st().paused && st().loop, st());
+
+    // Idle and still: the loop dozes (no frames, a few checks a second)
+    for (var w8 = 0; w8 < 20 && !st().dozing; w8++) await sleep(100);
+    if (st().frames > 0) check('idle and still: the loop dozes (no frames)', st().dozing && st().loop, st());
+    else note('no frame ran in virtual time: the dozing loop was not checked here');
+    // Paused, a new size clears the canvas: it is drawn again at once
+    window.wallpaperPropertyListener.setPaused(true);
+    var rp = st().renders;
+    app.setValue('quality', '0.5');
+    check('paused: a new size is drawn at once', st().renders > rp && !st().loop, [st().renders - rp, st().loop]);
+    app.setValue('quality', set.BY_KEY.quality.def);
+    window.wallpaperPropertyListener.setPaused(false);
+
+    // From here on, only step() moves the wallpaper (and the song clock)
+    D.manual(true);
+    check('manual frames: the loop stops', !st().loop && st().manual, st());
+    window.wallpaperPropertyListener.setPaused(true);
+    window.wallpaperPropertyListener.setPaused(false);
+    check('manual frames: resuming does not restart it', !st().loop, st());
+    if (WE) {
+      D.step(0.05);
+      check('WE: a song reported before main.js ran is picked up', st().title === 'Early Test' && st().synced && near(st().pos, 12, 0.01) && S.lyrics.state.key.indexOf('early test') >= 0, [st(), S.lyrics.state.key]);
+    }
+
+    // ---------------------------------------------------------------------
+    // Lyrics engine: LRC, titles, song clock, lookup
+    // ---------------------------------------------------------------------
+    var P = S.lyrics.parseLRC;
+    var r = P('[00:01.00]First test line\n[00:03.50]The second line comes in');
+    check('LRC: lines with their start and end', JSON.stringify(r.lines.map(function (l) { return [l.t, l.end, l.text]; })) === '[[1,3.5,"First test line"],[3.5,9.5,"The second line comes in"]]', r.lines);
+    r = P('[ar:Invented Artist]\n[offset:+500]\n[00:30.00]Chorus made up\n[00:10.00][00:50.00]Echo line invented\n[00:20.00]');
+    check('LRC: tags, offset, several stamps per line, sorted, empty lines kept',
+      JSON.stringify(r.lines.map(function (l) { return [l.t, l.text]; })) === '[[9.5,"Echo line invented"],[19.5,""],[29.5,"Chorus made up"],[49.5,"Echo line invented"]]', r.lines);
+    r = P('[00:12.00]<00:12.00>Every <00:12.50>word <00:13.10>counts');
+    check('LRC: word stamps', r.hasWords && r.lines[0].text === 'Every word counts' && r.lines[0].words.map(function (w) { return w.t; }).join() === '12,12.5,13.1', r.lines[0]);
+    var three = P('[00:01.00]a\n[00:03.00]b\n[00:05.00]c').lines;
+    check('lineAt', [0, 1, 2.5, 3.5, 99].map(function (p) { return S.lyrics.lineAt(three, p); }).join() === '-1,0,0,1,2', null);
+    function C(t, a) { var c = S.lyrics.cleanTitle(t, a); return c.track + ' | ' + c.artist; }
+    check('titles: version tails', C('Lantern Test - Remastered 2011', 'The Invented Band') === 'Lantern Test | The Invented Band', C('Lantern Test - Remastered 2011', 'The Invented Band'));
+    check('titles: video tags and credits', C('Lantern Test (feat. Someone Else) [Official Video]', 'The Invented Band') === 'Lantern Test | The Invented Band', C('Lantern Test (feat. Someone Else) [Official Video]', 'The Invented Band'));
+    check('titles: YouTube channels', C('Lantern Test', 'The Invented Band - Topic') === 'Lantern Test | The Invented Band' &&
+      C('The Invented Band - Lantern Test', 'TheInventedBandVEVO') === 'Lantern Test | The Invented Band',
+      [C('Lantern Test', 'The Invented Band - Topic'), C('The Invented Band - Lantern Test', 'TheInventedBandVEVO')]);
+
+    var K = S.songclock.create();
+    K.reset(0);
+    K.setPlaying(true, 0);
+    check('song clock: counts from the start without reports', near(K.position(5000), 5) && !K.synced(), K.position(5000));
+    K.timeline(30, 200, 5000);
+    check('song clock: a far report is a seek', near(K.position(5000), 30) && K.synced() && K.duration() === 200, K.position(5000));
+    K.timeline(30.6, 200, 6000);
+    var back = false, prev = K.position(6000);
+    for (var tm = 6000; tm <= 8000; tm += 16) { var pp = K.position(tm); if (pp < prev - 1e-9) back = true; prev = pp; }
+    check('song clock: a close report blends in, never backwards', !back && near(K.position(8000), 32.6, 0.01), K.position(8000));
+    K.setPlaying(false, 8000);
+    check('song clock: paused, it stands still', near(K.position(8000), K.position(20000)), [K.position(8000), K.position(20000)]);
+
+    S.lyrics.debounceMs = 0;
+    S.lyrics.maxRetryWait = 1;
+    function look(meta) { return new Promise(function (res) { S.lyrics.load(meta, res); }); }
+    var n0 = fakeLog.length, l1 = await look({ title: 'Search Only Test', artist: 'The Invented Band', duration: 100 });
+    check('lookup: not at /get, found by search', l1.status === 'synced' && l1.match.source === 'search' && /\/get\?/.test(fakeLog[n0]), { r: l1.match, urls: since(n0) });
+    n0 = fakeLog.length;
+    var l2 = await look({ title: 'Search Only Test (Official Video)', artist: 'The Invented Band' });
+    check('lookup: the same song again comes from the cache', l2.status === 'synced' && fakeLog.length === n0, since(n0));
+    fakeMode.cors = true;
+    n0 = fakeLog.length;
+    var l3 = await look({ title: 'Cors Test', artist: 'The Invented Band' });
+    fakeMode.cors = false;
+    check('lookup: a refused header (CORS) is asked again without it', l3.status === 'synced' && fakeOpts.length - n0 === 2 && !fakeOpts[fakeOpts.length - 1].headers, { status: l3.status, n: fakeOpts.length - n0 });
+    fakeMode.busy = 1;
+    n0 = fakeLog.length;
+    var l4 = await look({ title: 'Busy Test', artist: 'The Invented Band' });
+    check('lookup: busy (429) waits Retry-After and asks again', l4.status === 'synced' && fakeLog.length - n0 === 2 && fakeMode.busy === 0, { status: l4.status, n: fakeLog.length - n0 });
+    var l5 = await look({ title: 'Gone Test', artist: 'Nobody' });
+    n0 = fakeLog.length;
+    var l6 = await look({ title: 'Gone Test', artist: 'Nobody' });
+    check('lookup: not found, and remembered', l5.status === 'notfound' && l6.status === 'notfound' && fakeLog.length === n0, [l5.status, l6.status, since(n0)]);
+    var l7 = await look({ title: 'Broken Test', artist: 'Broken Server' });
+    n0 = fakeLog.length;
+    var l8 = await look({ title: 'Broken Test', artist: 'Broken Server' });
+    check('lookup: a server error is not remembered', l7.status === 'error' && l8.status === 'error' && fakeLog.length > n0, [l7.status, l8.status]);
+    S.lyrics.debounceMs = 600;
+    S.lyrics.cancel();
+
+    // ---------------------------------------------------------------------
+    // Settings, themes, codes
+    // ---------------------------------------------------------------------
+    var neon = set.presetValues('neon');
+    if (!WE) {
+      app.setValue('preset', 'neon');
+      check('theme copies its values', eff().bgstyle === neon.bgstyle && eff().lyricfont === neon.lyricfont, eff().bgstyle);
+      check('theme resets what it does not set', eff().lyricpos === 'center' && eff().lyricsize === 1, eff().lyricpos);
+      app.setValue('lyricsize', 1.5);
+      check('a change makes it custom', app.getValues().preset === 'custom', app.getValues().preset);
+      check('a change keeps the rest of the theme', eff().bgstyle === neon.bgstyle, eff().bgstyle);
+      app.setValue('trigger', 'sound');
+      window.wallpaperPropertyListener.applyUserProperties({ idleimage: { value: 'C:\\Users\\Test User\\Pictures\\private.jpg' } });
+      var code = app.exportCode(), before = JSON.stringify(eff());
+      check('export leaves the image path out', code.indexOf('LYRIC1:') === 0 && !('idleimage' in set.decode(code)) && set.decode(code).trigger === 'sound', set.decode(code));
+      app.reset();
+      check('defaults restored', eff().lyricsize === 1 && eff().trigger === 'auto' && eff().idleimage === '', eff());
+      check('imports a code', app.importCode(code) === true, code);
+      var after = JSON.parse(JSON.stringify(eff())), b = JSON.parse(before);
+      delete after.preset; delete b.preset; delete b.idleimage; delete after.idleimage;
+      check('export/import roundtrip', JSON.stringify(after) === JSON.stringify(b), { code: code });
+      check('an invalid code is rejected', app.importCode('LYRIC1:junk!!') === false && app.importCode('') === false, null);
+      check('imports plain JSON', app.importCode('{"lyricsize": 1.75, "nokey": 1}') && eff().lyricsize === 1.75, eff().lyricsize);
+      check('sanitize clamps and rejects', set.sanitize('lyricsize', 99) === 2 && set.sanitize('bgstyle', 'xyz') === undefined && set.sanitize('idleimage', 5) === undefined, null);
+      app.setValue('transition', 4.2);
+      var saved = JSON.parse(localStorage.getItem('lyric-stage-settings') || '{}');
+      check('saved in localStorage', saved.transition === 4.2, saved.transition);
+      app.reset();
+    } else {
+      var all = {};
+      set.SCHEMA.forEach(function (s) { all[s.key] = { value: s.def }; });
+      all.preset = { value: 'neon' };
+      window.wallpaperPropertyListener.applyUserProperties(all);
+      check('WE: the theme is the base', eff().bgstyle === neon.bgstyle && eff().reactiveamt === neon.reactiveamt, eff().bgstyle);
+      window.wallpaperPropertyListener.applyUserProperties({ bgstyle: { value: 'cover' } });
+      check('WE: a panel change wins over the theme', eff().bgstyle === 'cover', eff().bgstyle);
+      window.wallpaperPropertyListener.applyUserProperties({ importcode: { value: set.encode({ lyricsize: 1.6, bgstyle: 'minimal', idleimage: 'C:\\x.jpg' }) } });
+      check('WE: an imported code wins over the theme', eff().lyricsize === 1.6, eff().lyricsize);
+      check('WE: the panel wins over the code', eff().bgstyle === 'cover', eff().bgstyle);
+      check('WE: a code never carries an image path', eff().idleimage === '', eff().idleimage);
+      window.wallpaperPropertyListener.applyUserProperties({ bgstyle: { value: set.BY_KEY.bgstyle.def } });
+      check('WE: back to the default gives the layer below', eff().bgstyle === 'minimal', eff().bgstyle);
+      window.wallpaperPropertyListener.applyUserProperties({ idleimage: { value: 'C:\\Users\\Test User\\Pictures\\private.jpg' } });
+      check('WE: export leaves the image path out', !('idleimage' in set.decode(app.exportCode())), set.decode(app.exportCode()));
+      check('WE: nothing saved in localStorage', localStorage.getItem('lyric-stage-settings') === null, null);
+      window.wallpaperPropertyListener.applyUserProperties({ preset: { value: 'stage' }, importcode: { value: '' }, idleimage: { value: '' } });
+    }
+    // Half resolution: the logic is the same and software rendering is faster
+    app.setValue('quality', '0.5');
+
+    // ---------------------------------------------------------------------
+    // "My image": the file property → #ls-image, with the fallback
+    // ---------------------------------------------------------------------
+    var img = document.getElementById('ls-image'), pic = png('#f0a040', '#40a0f0');
+    window.wallpaperPropertyListener.applyUserProperties({ idlestyle: { value: 'image' }, idleimage: { value: pic } });
+    await sleep(200);
+    D.step(0.05);
+    check('My image: the picture shows under a clear canvas', st().idle === 'image' && st().image === 'ok' && !img.hidden && img.style.backgroundImage.indexOf(pic.slice(0, 40)) >= 0, { s: st(), bg: img.style.backgroundImage.slice(0, 60) });
+    check('My image: dark page background under it', bg() === 'rgb(0, 0, 0)', bg());
+    var winPath = 'C:\\Users\\Test User\\Pictures\\My Wallpaper (1).jpg';
+    window.wallpaperPropertyListener.applyUserProperties({ idleimage: { value: winPath } });
+    check('My image: a Windows path becomes a file URL', img.style.backgroundImage.indexOf('file:///C:/Users/Test%20User/Pictures/My%20Wallpaper%20%281%29.jpg') >= 0, img.style.backgroundImage);
+    await sleep(300);
+    D.step(0.05);
+    check('My image: a picture that does not load falls back to the Windows 11 style', st().image === 'bad' && st().idle === 'win11' && img.hidden, st());
+    window.wallpaperPropertyListener.applyUserProperties({ idleimage: { value: '' } });
+    D.step(0.05);
+    check('My image without a picture: the Windows 11 style', st().idle === 'win11' && st().image === 'none' && img.hidden && img.style.backgroundImage === '', st());
+    window.wallpaperPropertyListener.applyUserProperties({ idleimage: { value: pic } });
+    await sleep(200);
+    app.setValue('idlestyle', 'win10');
+    D.step(0.05);
+    check('another look hides the image', st().idle === 'win10' && img.hidden && img.style.backgroundImage === '', st());
+    check('page background follows the look (no pale flash)', bg() === 'rgb(0, 16, 46)', bg());
+    check('menu panel dark on a dark look', panel().style.colorScheme === 'dark', panel().style.colorScheme);
+    app.setValue('idlestyle', 'win11dark');
+    check('page background: dark Windows 11 style', bg() === 'rgb(10, 18, 34)', bg());
+    app.setValue('idlestyle', 'win11');
+    window.wallpaperPropertyListener.applyUserProperties({ idleimage: { value: '' } });
+    check('back on the light look: light panel', panel().style.colorScheme === 'light' && bg() === 'rgb(221, 232, 245)', [panel().style.colorScheme, bg()]);
+
+    // ---------------------------------------------------------------------
+    // Rendering on demand
+    // ---------------------------------------------------------------------
+    app.setValue('trigger', 'never');
+    run(1);
+    var r0 = st().renders;
+    run(2, 1 / 30);
+    check('idle without motion: nothing drawn', st().renders === r0, st().renders - r0);
+    app.setValue('idlemotion', true);
+    var r1 = st().renders;
+    run(1, 1 / 60);
+    var rn = st().renders - r1;
+    check('idle motion: drawn, at most 30 times a second', rn >= 28 && rn <= 32, rn);
+    app.setValue('idlemotion', false);
+    run(0.2);
+    var r2 = st().renders;
+    run(1);
+    check('motion off: still again', st().renders === r2, st().renders - r2);
+
+    // ---------------------------------------------------------------------
+    // Idle ↔ show
+    // ---------------------------------------------------------------------
+    app.setValue('transition', 1);
+    app.setValue('returndelay', 2);
+    app.setValue('audioenabled', true);
+    app.setValue('trigger', 'auto');
+    M.status({ enabled: true });
+    sound(false);
+    song('Trigger Test', 'Nobody');
+    play(true);
+    D.step(0.1);
+    check('auto: a song playing starts the show', st().mode === 'in' && st().source === 'media', st());
+    run(1);
+    check('the transition lasts "transition" seconds', st().mode === 'show' && st().show === 1, st());
+    var shown0 = st().renders;
+    run(0.5);
+    check('the show is drawn every frame', st().renders - shown0 === 5, st().renders - shown0);
+    shown0 = st().renders;
+    run(1, 1 / 60);
+    var calm = st().renders - shown0;
+    check('a silent show (nothing reacts) is drawn at most 30 times a second', calm >= 28 && calm <= 32, calm);
+    sound(true);
+    run(0.1, 1 / 60);
+    shown0 = st().renders;
+    run(0.5, 1 / 60);
+    check('a show that reacts to the sound: every frame', st().renders - shown0 === 30, st().renders - shown0);
+    sound(false);
+    play(false);
+    run(1.5);
+    check('paused 1.5 s: still the show', st().on && st().mode === 'show', st());
+    run(0.6);
+    check('paused 2 s ("Back to the wallpaper after"): turns back', st().mode === 'out', st());
+    run(1.1);
+    check('back to the wallpaper', st().mode === 'idle' && st().show === 0, st());
+    play(true);
+    run(1.2);
+    play(false);
+    run(1.5);
+    play(true);
+    run(1);
+    check('playing again within the delay: the show stays', st().mode === 'show' && st().off === 0, st());
+    play('stop');
+    run(2.1);
+    check('stopped: turns back too', st().mode === 'out', st());
+    run(1.1);
+    app.setValue('transition', 2);
+    play(true);
+    run(1);
+    check('"transition" 2 s: halfway after 1 s', near(st().amount, 0.5, 0.06) && near(st().show, 0.5, 0.06), st());
+    rest();
+    app.setValue('transition', 1);
+
+    M.status({ enabled: false });
+    check('media integration off', S.media.state.enabled === false && !S.media.state.playing, S.media.state.enabled);
+    sound(true);
+    run(2);
+    check('auto without media: 2 s of sound is not enough', st().mode === 'idle', st());
+    run(1.6);
+    check('auto without media: 3.5 s of sound start the show', st().on && st().source === 'sound', st());
+    run(1);
+    sound(false);
+    run(1.5);
+    check('a short silence keeps it', st().on, st());
+    sound(true);
+    run(0.3);
+    sound(false);
+    run(2.1);
+    check('2 s of silence: turns back', !st().on, st());
+    run(1.1);
+    sound(true);
+    run(1.5);
+    sound(false);
+    run(3);
+    check('a short sound (a notification) does not start it', st().mode === 'idle' && !st().music, st());
+
+    app.setValue('trigger', 'media');
+    sound(true);
+    run(4);
+    check('"media": sound alone does nothing', st().mode === 'idle', st());
+    M.status({ enabled: true });
+    play(true);
+    D.step(0.1);
+    check('"media": a song playing starts it', st().on && st().source === 'media', st());
+    play(false);
+    run(2.1);
+    check('"media": paused, sound or not, turns back after the delay', !st().on, st());
+    sound(false);
+    run(1.1);
+    app.setValue('trigger', 'sound');
+    play(true);
+    run(4);
+    check('"sound": a song reported without sound does nothing', st().mode === 'idle', st());
+    sound(true);
+    run(3.6);
+    check('"sound": sound starts it', st().on && st().source === 'sound', st());
+    sound(false);
+    run(2.1);
+    check('"sound": silence turns it back', !st().on, st());
+    run(1.1);
+    app.setValue('trigger', 'always');
+    D.step(0.05);
+    check('"always": on without anything', st().on && st().source === 'always', st());
+    run(1.1);
+    sound(true);
+    app.setValue('trigger', 'never');
+    D.step(0.05);
+    check('"never": turns back at once, music or not', !st().on && st().mode === 'out', st());
+    run(1.1);
+    app.setValue('trigger', 'sound');
+    app.setValue('audioenabled', false);
+    run(4);
+    check('"sound" with "React to audio" off: nothing', st().mode === 'idle', st());
+    app.setValue('audioenabled', true);
+    sound(false);
+    app.setValue('trigger', 'auto');
+    rest();
+
+    // ---------------------------------------------------------------------
+    // The lyrics of each new song
+    // ---------------------------------------------------------------------
+    n0 = fakeLog.length;
+    song('Lantern Test', 'The Invented Band');
+    play(true);
+    check('new song: its lyrics are looked up', S.lyrics.state.status === 'searching' && st().lyrics === 'searching', S.lyrics.state.status);
+    tl(0.4, 200);
+    await settle();
+    check('one request, with the duration the player reported', fakeLog.length - n0 === 1 && /get\?track_name=Lantern%20Test&artist_name=The%20Invented%20Band&duration=200$/.test(fakeLog[n0]), since(n0));
+    check('lyrics found (synced)', st().lyrics === 'synced' && st().lines === 8, st());
+    run(0.6);
+    check('the song card makes way for a first line that comes soon', ST.state().visible && !ST.state().hero && ST.state().corner, ST.state());
+    run(0.6);
+    tl(5.5, 200);
+    D.step(0.1);
+    var s = st();
+    check('the current line follows the timeline', s.line === 1 && near(s.pos, 5.6, 0.02) && s.synced, s);
+    check('the stage shows that line', ST.state().lyrics && !ST.state().hero && ST.state().cur === 'The second line comes in', ST.state());
+    check('…with the line before and after it', ST.state().prev === 'First test line' && ST.state().next === 'A third invented line', ST.state());
+    run(3);
+    check('it moves on with the song', st().line === 2 && ST.state().cur === 'A third invented line', [st().line, ST.state().cur]);
+    tl(30.5, 200);
+    D.step(0.1);
+    check('a seek jumps to its line', st().line === 6 && ST.state().cur === 'Back after the pause', [st().line, ST.state().cur]);
+    app.setValue('lyricoffset', 1.5);
+    D.step(0.1);
+    check('timing adjustment +1.5 s: the lyrics come later', st().line === 5 && near(st().pos, 30.7 - 1.5, 0.02), st());
+    app.setValue('lyricoffset', -1);
+    D.step(0.1);
+    check('timing adjustment -1 s: sooner', st().line === 6 && near(st().pos, 31.8, 0.02), st());
+    app.setValue('lyricoffset', 0);
+    play(false);
+    D.step(0.1);
+    var p0 = st().pos;
+    run(1);
+    check('paused: the lyrics wait', near(st().pos, p0), [p0, st().pos]);
+    play(true);
+    tl(14.5, 200);
+    app.setValue('lyricsize', 2);
+    run(0.5);
+    var ce = document.querySelector('.ls-line.ls-cur'), lh = ce && parseFloat(getComputedStyle(ce).lineHeight), hh = ce && ce.querySelector('.ls-in').offsetHeight;
+    check('size 2: a long line still takes two rows at most', ST.state().cur.indexOf('The fifth test line') === 0 && hh <= lh * 2.4, [ST.state().cur, hh, lh]);
+    app.setValue('lyricsize', 1);
+
+    // A pause runs on across an empty line: one "♪ ♪ ♪" until the next line
+    song('Pause Chain Test', 'Test Artist');
+    await settle();
+    tl(0, 60);
+    var ids = [];
+    for (var q = 0; q < 290; q++) {
+      D.step(0.1);
+      ids.push([st().pos, ST.state().item]);
+    }
+    var mid = ids.filter(function (e) { return e[0] >= 12 && e[0] < 26.9; }).map(function (e) { return e[1]; });
+    var end = ids.filter(function (e) { return e[0] >= 27.2; }).map(function (e) { return e[1]; });
+    check('a pause stays one item across an empty line', mid.length > 100 && mid.every(function (v) { return v === mid[0]; }) && mid[0] % 2 === 1 && ids.every(function (e) { return e[1] !== 6; }), { first: mid[0], last: mid[mid.length - 1] });
+    check('…until the next line', end.length && end[0] === 8, end.slice(0, 3));
+
+    // Skipping songs quickly: only the last one is looked up
+    n0 = fakeLog.length;
+    song('Skip One', 'Skipper');
+    song('Skip Two', 'Skipper');
+    song('Skip Three', 'Skipper');
+    await settle();
+    var urls = since(n0);
+    check('quick skips: only the last song is looked up', urls.indexOf('Skip%20One') < 0 && urls.indexOf('Skip%20Two') < 0 && urls.indexOf('Skip%20Three') >= 0 && st().lyrics === 'synced', urls);
+    n0 = fakeLog.length;
+    song('Lantern Test', 'The Invented Band');
+    check('a song heard before: from the cache, at once', st().lyrics === 'synced' && fakeLog.length === n0, [st().lyrics, since(n0)]);
+
+    // Many songs, seeks back and forth: the stage does not grow
+    function stageNodes() { return document.getElementById('ls-stage').getElementsByTagName('*').length; }
+    var grow = [];
+    for (var sk = 0; sk < 12; sk++) {
+      song(['Skip One', 'Skip Two', 'Skip Three', 'Lantern Test'][sk % 4], sk % 4 === 3 ? 'The Invented Band' : 'Skipper');
+      tl(0, 90);
+      run(6, 0.25);
+      tl(sk % 2 ? 1.5 : 7.5, 90);
+      run(2, 0.25);
+      if (sk === 3 || sk === 11) grow.push(stageNodes());
+    }
+    check('many songs and seeks: the stage keeps its size', grow[1] <= grow[0] + 15 && ST.state().pool <= 9, { nodes: grow, pool: ST.state().pool });
+
+    // Right-to-left lyrics (invented lines)
+    song('Rtl Test', 'Nobody');
+    await settle();
+    tl(1.5, 60);
+    run(5.5);
+    var rl = document.querySelector('.ls-line.ls-cur');
+    check('right-to-left lines read right to left', st().lyrics === 'synced' && rl && getComputedStyle(rl).direction === 'rtl' && rl.classList.contains('ls-rtl'), [st().lyrics, rl && rl.className]);
+
+    // Lyrics off, trigger never: nothing looked up
+    app.setValue('lyrics', false);
+    n0 = fakeLog.length;
+    song('Missing Test', 'Nobody');
+    await settle();
+    check('lyrics off: nothing looked up', st().lyrics === 'off' && fakeLog.length === n0, [st().lyrics, since(n0)]);
+    app.setValue('lyrics', true);
+    check('lyrics on again: looked up', st().lyrics === 'searching', st().lyrics);
+    await settle();
+    run(0.5);
+    check('not found: the stage says so', st().lyrics === 'notfound' && ST.state().message === 'lyrics.notFound', [st().lyrics, ST.state()]);
+    app.setValue('trigger', 'never');
+    n0 = fakeLog.length;
+    song('Skip Two', 'Skipper');
+    await settle();
+    check('"never": no lookups', st().lyrics === 'off' && fakeLog.length === n0, [st().lyrics, since(n0)]);
+    app.setValue('trigger', 'auto');
+    await settle();
+    check('back on: the song is looked up', st().lyrics === 'synced' && since(n0).indexOf('Skip%20Two') >= 0, [st().lyrics, since(n0)]);
+
+    // Other results
+    run(1.2);
+    song('Plain Test', 'Nobody Real');
+    await settle();
+    run(1);
+    check('a new song: the big song card first', ST.state().hero && !ST.state().plain, ST.state());
+    run(4.5);
+    check('plain lyrics: they scroll, approximately', st().lyrics === 'plain' && ST.state().plain && ST.state().message === 'lyrics.plain', [st().lyrics, ST.state()]);
+    song('Quiet Test', 'Ambient Nobody');
+    await settle();
+    run(5.5);
+    check('instrumental: the whole song', st().lyrics === 'instrumental' && ST.state().lyrics && ST.state().item === -2, [st().lyrics, ST.state()]);
+    song('Error Test', 'Broken Server');
+    await settle();
+    run(0.5);
+    check('the service fails: the stage says so', st().lyrics === 'error' && ST.state().message === 'lyrics.error', [st().lyrics, ST.state()]);
+    n0 = fakeLog.length;
+    run(20.5);
+    await settle();
+    check('…and asks once more later in the song', since(n0).indexOf('Error%20Test') >= 0, since(n0));
+    fakeMode.offline = true;
+    song('Offline Test', 'Nobody');
+    await settle();
+    check('offline: error', st().lyrics === 'error', st().lyrics);
+
+    // The media integration turned off: its last song is stale (a sound-only
+    // show without that song's card, cover or lyrics)
+    app.setValue('trigger', 'sound');
+    M.status({ enabled: false });
+    sound(true);
+    run(4);
+    check('media integration off: no stale song on the stage', st().on && st().lyrics === 'off' && !ST.state().corner && !ST.state().hero && !ST.state().lyrics, [st(), ST.state()]);
+    sound(false);
+    M.status({ enabled: true });
+    app.setValue('trigger', 'auto');
+    play(true);
+    fakeMode.offline = false;
+
+    // A player that does not report the position
+    song('No Clock Test', 'Quiet Player');
+    await settle();
+    p0 = st().pos;
+    run(5);
+    s = st();
+    check('no timeline: counted from the start of the song', !s.synced && s.lyrics === 'synced' && near(s.pos, p0 + 5, 0.01) && s.line === 0, s);
+    check('…and the stage says so', ST.state().message === 'lyrics.estimated', ST.state());
+    tl(7, 120);
+    D.step(0.1);
+    check('a report arrives: in sync', st().synced && near(st().pos, 7.1, 0.02) && st().line === 1, st());
+
+    // ---------------------------------------------------------------------
+    // Album colors
+    // ---------------------------------------------------------------------
+    song('Album Test', 'Color Band');
+    M.thumb({ thumbnail: png('#ff2200', '#ffaa00'), primaryColor: '#ff2200', secondaryColor: '#ffaa00', tertiaryColor: '#220000' });
+    await sleep(150);
+    run(4);
+    var A = D.live.A;
+    check('the show takes the cover colors', A[0] > 0.6 && A[0] > A[1] * 1.5 && A[0] > A[2] * 2, A);
+    check('the cover goes to the background', st().cover === true, st());
+    var acc = rgbOf(document.querySelector('.ls-wrap').style.getPropertyValue('--ls-accent'));
+    check('the lyrics accent follows the album', acc[0] > acc[1] && acc[0] > acc[2] + 60, acc);
+    check('menu panel in the album colors (dark) during the show', panel().style.colorScheme === 'dark', panel().style.colorScheme);
+    app.setValue('textmode', 'white');
+    run(4);
+    check('text color: white', D.live.text.every(function (v) { return v > 0.99; }) && D.live.accent.every(function (v) { return v > 0.99; }), D.live.text);
+    app.setValue('textmode', 'custom');
+    app.setValue('textcolor', '0.200 0.900 0.500');
+    run(4);
+    check('text color: custom', near(D.live.text[0], 0.2, 0.01) && near(D.live.text[1], 0.9, 0.01) && near(D.live.text[2], 0.5, 0.01), D.live.text);
+    app.setValue('textmode', 'album');
+    app.setValue('textcolor', set.BY_KEY.textcolor.def);
+    M.thumb({ thumbnail: png('#808080', '#606060'), primaryColor: '#808080', secondaryColor: '#606060', tertiaryColor: '#202020' });
+    run(4);
+    A = D.live.A;
+    check('a grey cover stays silvery', Math.max.apply(null, A) - Math.min.apply(null, A) < 0.06 && A[0] > 0.5, A);
+    M.thumb({ thumbnail: '' });
+    app.setValue('showcolor', '0.000 1.000 0.000');
+    run(4);
+    A = D.live.A;
+    check('no cover: "Color when there is no album cover"', A[1] > 0.6 && A[1] > A[0] * 1.5 && A[1] > A[2] * 1.5 && !st().cover, A);
+    app.setValue('showcolor', set.BY_KEY.showcolor.def);
+    rest();
+    run(0.6);
+    check('back to the wallpaper: light menu panel again', panel().style.colorScheme === 'light', panel().style.colorScheme);
+
+    // ---------------------------------------------------------------------
+    // Languages
+    // ---------------------------------------------------------------------
+    play(true);
+    song('Missing Test', 'Nobody');
+    run(1.5);
+    app.setValue('language', 'pt');
+    run(0.1);
+    check('pt: language set', I.lang() === 'pt' && document.documentElement.lang === 'pt-BR', [I.lang(), document.documentElement.lang]);
+    check('pt: menu relabeled', title() === I.t('menu.title') && lbl('lyrics') === I.t('s.lyrics', set.BY_KEY.lyrics.label), [title(), lbl('lyrics')]);
+    var msgEl = document.querySelector('.ls-hero-status.ls-on, .ls-status.ls-on');
+    check('pt: the stage message in the language', ST.state().message === 'lyrics.notFound' && msgEl && msgEl.textContent === I.t('lyrics.notFound'), [ST.state().message, msgEl && msgEl.textContent]);
+    app.setValue('language', 'ar');
+    run(0.1);
+    msgEl = document.querySelector('.ls-hero-status.ls-on, .ls-status.ls-on');
+    check('ar: menu right to left', panel().dir === 'rtl', panel().dir);
+    check('ar: stage message right to left', msgEl && msgEl.dir === 'rtl', msgEl && msgEl.dir);
+    app.setValue('language', 'auto');
+    window.wallpaperPropertyListener.applyGeneralProperties({ language: 'ru-ru' });
+    check('auto: the Wallpaper Engine language', I.lang() === 'ru' && title() === I.t('menu.title'), [I.lang(), title()]);
+    app.setValue('language', 'en');
+    check('en: menu in English', title() === 'Settings' && lbl('lyrics') === 'Show the lyrics', [title(), lbl('lyrics')]);
+
+    // ---------------------------------------------------------------------
+    // Resolution, FPS limit, themes
+    // ---------------------------------------------------------------------
+    app.setValue('quality', '0.75');
+    var dpr = Math.min(window.devicePixelRatio || 1, 2), cv = document.getElementById('ls-canvas');
+    check('render resolution 75%', D.size().W === Math.round(innerWidth * dpr * 0.75) && cv.width === D.size().W, [D.size(), cv.width]);
+    app.setValue('quality', '0.5');
+    if (WE) window.wallpaperPropertyListener.applyGeneralProperties({ fps: 30 });
+    else app.setValue('fpslimit', '30');
+    check('FPS limit', st().fps === 30, st().fps);
+    if (WE) window.wallpaperPropertyListener.applyGeneralProperties({ fps: 0 });
+    else app.setValue('fpslimit', '0');
+    app.setValue('trigger', 'always');
+    var bad = [];
+    set.PRESETS.forEach(function (p) {
+      app.setValue('preset', p.id);
+      if (WE) window.wallpaperPropertyListener.applyUserProperties({ preset: { value: p.id } });
+      try { run(0.5); } catch (e) { bad.push(p.id + ': ' + e.message); }
+    });
+    check('every theme runs', !bad.length, bad);
+    app.setValue('preset', 'stage');
+    if (WE) window.wallpaperPropertyListener.applyUserProperties({ preset: { value: 'stage' } });
+    ['spotlights', 'cover', 'minimal', 'aurora'].forEach(function (b) {
+      app.setValue('bgstyle', b);
+      try { run(0.3); } catch (e) { bad.push(b + ': ' + e.message); }
+    });
+    ['words', 'fade', 'karaoke'].forEach(function (a) {
+      app.setValue('lyricanim', a);
+      try { run(0.3); } catch (e) { bad.push(a + ': ' + e.message); }
+    });
+    check('every background and animation runs', !bad.length, bad);
+    app.setValue('trigger', 'auto');
+    rest();
+
+    // ---------------------------------------------------------------------
+    // The console demo
+    // ---------------------------------------------------------------------
+    var demo = D.demo();
+    await settle();
+    run(9);
+    s = st();
+    check('demo: the show plays an invented song', s.mode === 'show' && s.title === 'Invented Demo Song' && s.lyrics === 'synced' && s.line === 0 && s.cover, s);
+    check('demo: the stage sings its first line', ST.state().cur === s.text && /^First demo line/.test(s.text), ST.state());
+    demo.seek(41);
+    D.step(0.1);
+    check('demo: seek', st().line === 7, st());
+    demo.pause();
+    run(D.cfg.returndelay + D.cfg.transition + 0.2);
+    check('demo: paused, back to the wallpaper', st().mode === 'idle', st());
+    demo.stop();
+    check('demo: stop puts lrclib back', S.lyrics.fetch === FAKE && !st().demo, st().demo);
+    var demo2 = D.demo({ words: true, timeline: false, title: 'Another Invented Song' });
+    await settle();
+    run(1.5);
+    check('demo: word stamps, a player without a timeline', S.lyrics.state.hasWords && !st().synced && st().mode === 'show', st());
+    demo2.stop();
+    rest();
+
+    // ---------------------------------------------------------------------
+    // WebGL context lost for good → Canvas 2D
+    // ---------------------------------------------------------------------
+    app.setValue('trigger', 'always');
+    run(1.2);
+    var glc = document.getElementById('ls-canvas').getContext('webgl2'), ext = glc && glc.getExtension('WEBGL_lose_context');
+    if (ext) {
+      ext.loseContext();
+      await sleep(50);
+      run(3.5);
+      var cv2 = document.getElementById('ls-canvas'), rr = st().renders;
+      run(1);
+      check('WebGL context lost for good: Canvas 2D takes over', D.renderer() === '2d' && cv2 !== cv && !!cv2.getContext('2d') && st().renders > rr && cv2.width === D.size().W, [D.renderer(), st().renders - rr]);
+      app.setValue('trigger', 'auto');
+      rest();
+      check('Canvas 2D: back to the wallpaper', st().mode === 'idle', st());
+    } else {
+      note('WEBGL_lose_context unavailable: the Canvas 2D fallback was not tested');
+    }
+  } catch (e) {
+    results.push('EXCEPTION ' + e.message + ' ' + (e.stack || '').split('\n').slice(0, 3).join(' | '));
+  }
+
+  check('no JS errors', !window.__errs.length, window.__errs.slice(0, 5));
+  results.push('ERRORS: ' + JSON.stringify(window.__errs.slice(0, 5)) + ' total=' + window.__errs.length);
+  document.getElementById('out').textContent = results.join(String.fromCharCode(10)) + String.fromCharCode(10) + 'DONE';
+})();
+</script>
+</body>
+</html>

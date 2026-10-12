@@ -65,15 +65,34 @@ English lives in the code (option labels in `js/settings.js`, UI strings in `js/
 
 ## Performance
 
-- The background is a single full-screen shader pass. While waiting for music without motion, nothing is drawn at all until something changes.
+- The background is a single full-screen shader pass. While waiting for music without motion, nothing is drawn at all until something changes, and the frame loop dozes (about ten quick checks a second instead of a frame every refresh).
 - **Render resolution** (General) draws the background at 75% (default) or 50% for weaker GPUs.
 - The lyrics are plain text on top: the page only changes when a line changes (the karaoke fill is one CSS variable).
 - Lyrics are fetched once per song (and cached), never per frame.
-- When Wallpaper Engine pauses the wallpaper (`wallpaperPropertyListener.setPaused`), rendering stops until it resumes.
+- **Gentle motion while waiting** draws at most 30 frames a second (it moves slowly). So does the show while nothing reacts to the music (paused or silent, or **Background reacts to the music** off); the transitions and a show that reacts get every frame.
+- When Wallpaper Engine pauses the wallpaper (`wallpaperPropertyListener.setPaused`), rendering stops until it resumes; the lyrics are still in sync afterwards (the song position goes by the real time).
+- Without WebGL2 (or when its context is lost for good) the background falls back to a simpler Canvas 2D version.
 
 ## Trying things out
 
-In a browser (or the Wallpaper Engine developer tools), the console has `Lyric.debug` (see `js/main.js`): it can run the show with an invented song and invented lines, without a player.
+In a browser (or the Wallpaper Engine developer tools), the console has `Lyric.debug` (see `js/main.js`). Its demo plays a made-up song from start to end without a player: it fakes the media events (title, cover, playback, position, a beat) and answers the lyrics lookup itself with invented lines, so it works offline too.
+
+```js
+var d = Lyric.debug.demo();   // the show comes in; the song card, then the lyrics
+d.seek(40);                    // jump to a later line
+d.pause();                     // back to the wallpaper after the pause setting
+d.play();
+d.stop();                      // the player stops (and the lookup goes back to lrclib.net)
+```
+
+| Call | What it does |
+|---|---|
+| `Lyric.debug.demo(options)` | Plays the demo song and returns `{ pause(), play(), seek(seconds), position(), stop() }`. Options: `title`, `artist`, `album`, `duration` (s), `lrc` (your own **invented** lines, LRC format), `words: true` (a stamp before each word, for **Word by word**), `at` (start position, s), `timeline: false` (a player that does not report the position), `audio: false` (no fake beat), `colors` (three CSS colors for the made-up cover), `cover: false`, `found: false` (no lyrics found) |
+| `Lyric.debug.state()` | What shows now: `mode` (`idle`, `in`, `show`, `out`), `show` (0–1), `source` (what keeps the show on: `media`, `sound`, `always`), `idle` (the look in use), `image` (My image: `none`, `loading`, `ok`, `bad`), `lyrics` (the lookup: `searching`, `synced`, `plain`, `instrumental`, `notfound`, `error`), `line` and `text` (the current line), `pos` (the song position the lyrics follow, timing adjustment included), `synced` (the player reports the position), `renders` (background frames drawn so far), `loop` and `dozing` (the frame loop runs; it dozes while nothing moves)… |
+| `Lyric.debug.manual(true)` | Stops the automatic frames; then `Lyric.debug.step(dt)` draws one frame of `dt` seconds and moves the song clock by as much (deterministic tests and screenshots). `manual(false)` resumes |
+| `Lyric.app.setValue(key, value)` | Changes a setting, as the menu does (keys in `js/settings.js`), e.g. `Lyric.app.setValue('trigger', 'always')` |
+
+`Lyric.stage.state()` tells what the lyrics layer shows (the big card, the corner card, the current, previous and next lines, the message).
 
 ## Changing settings or themes
 

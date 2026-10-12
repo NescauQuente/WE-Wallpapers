@@ -670,7 +670,7 @@
     idle: null, idleName: '', idleW: 0, idleH: 0,   // cached idle look
     vig: null,                        // cached vignette
     cover: null, tiny: null,
-    spr: null, sprKey: [-1, -1, -1, -1, -1, -1, -1, -1, -1],
+    spr: null, sprKey: [-1, -1, -1, -1, -1, -1, -1, -1, -1], sprT: 0, pM: new Float32Array(3),
     baseCss: '#000', pA: new Float32Array(3), pB: new Float32Array(3), pBase: new Float32Array(3),
     shown: 0, stale: true,            // as in the WebGL renderer
     lastT: -1, t: 0                   // the show clock (steps of p.time, as there)
@@ -687,9 +687,11 @@
     return c;
   }
 
-  // A soft round glow in one color
-  function blobSprite(c) {
-    var s = canvas2(128, 128), x = s.getContext('2d'), g = x.createRadialGradient(64, 64, 0, 64, 64, 64);
+  // A soft round glow in one color (redrawn into s when given)
+  function blobSprite(c, s) {
+    s = s || canvas2(128, 128);
+    var x = s.getContext('2d'), g = x.createRadialGradient(64, 64, 0, 64, 64, 64);
+    x.clearRect(0, 0, 128, 128);
     g.addColorStop(0, css(c[0], c[1], c[2], 1));
     g.addColorStop(0.45, css(c[0], c[1], c[2], 0.4));
     g.addColorStop(1, css(c[0], c[1], c[2], 0));
@@ -698,9 +700,12 @@
     return s;
   }
 
-  // A spotlight cone, apex at the top center, fading downward
-  function beamSprite(c) {
-    var s = canvas2(96, 512), x = s.getContext('2d'), g = x.createLinearGradient(0, 0, 0, 512);
+  // A spotlight cone, apex at the top center, fading downward (redrawn into s
+  // when given)
+  function beamSprite(c, s) {
+    s = s || canvas2(96, 512);
+    var x = s.getContext('2d'), g = x.createLinearGradient(0, 0, 0, 512);
+    x.clearRect(0, 0, 96, 512);
     g.addColorStop(0, css(c[0], c[1], c[2], 0.9));
     g.addColorStop(0.5, css(c[0], c[1], c[2], 0.35));
     g.addColorStop(1, css(c[0], c[1], c[2], 0));
@@ -727,9 +732,12 @@
     return s;
   }
 
-  // Sprites follow the colors, re-rendered only when they change visibly
+  // Sprites follow the colors, re-rendered only when they change visibly, at
+  // most 4 times a second while the colors ease (a blurred beam is costly on
+  // the CPU) and into the same canvases
   function sprites2(A, B, base) {
     var k = c2.sprKey, changed = false, i, v;
+    if (c2.spr && c2.t - c2.sprT < 0.25 && c2.t >= c2.sprT) return;
     for (i = 0; i < 9; i++) {
       v = Math.round((i < 3 ? A[i] : i < 6 ? B[i - 3] : base[i - 6]) * 48);
       if (k[i] !== v) {
@@ -738,12 +746,15 @@
       }
     }
     if (!changed && c2.spr) return;
-    var M = [(A[0] + B[0]) / 2, (A[1] + B[1]) / 2, (A[2] + B[2]) / 2];
-    c2.spr = {
-      A: blobSprite(A), B: blobSprite(B), M: blobSprite(M),
-      bA: beamSprite(A), bB: beamSprite(B),
-      dot: c2.spr ? c2.spr.dot : dotSprite()
-    };
+    c2.sprT = c2.t;
+    var M = c2.pM, sp = c2.spr;
+    for (i = 0; i < 3; i++) M[i] = (A[i] + B[i]) / 2;
+    if (!sp) sp = c2.spr = { A: null, B: null, M: null, bA: null, bB: null, dot: dotSprite() };
+    sp.A = blobSprite(A, sp.A);
+    sp.B = blobSprite(B, sp.B);
+    sp.M = blobSprite(M, sp.M);
+    sp.bA = beamSprite(A, sp.bA);
+    sp.bB = beamSprite(B, sp.bB);
     c2.baseCss = css(base[0], base[1], base[2], 1);
   }
 
