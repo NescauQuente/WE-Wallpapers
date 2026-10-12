@@ -464,6 +464,7 @@
   // silent at once: the lyrics stop with it (and go on when the sound is back)
   var HUSH = 0.25;     // s of total silence while 'playing' that holds the song's clock
   var hush = false;
+  var shownPos = 0, shownTrack = -1, shownOffset = 0;   // the position the lyrics last showed
   var heard = false;   // this song has been heard (so the audio is really reaching us)
 
   function clockPlaying() {
@@ -475,7 +476,7 @@
     var h = isWE && heard && cfg.audioenabled && media.state.playing && audio.state.silentFor > HUSH;
     if (h === hush) return;
     hush = h;
-    songclock.setPlaying(clockPlaying(), now());
+    songclock.setPlaying(clockPlaying(), now(), true);
   }
 
   media.state.onChange = function () {
@@ -554,6 +555,12 @@
 
     // The song position the lyrics follow ('lyricoffset' > 0: they come later)
     pos = songclock.position(t) - cfg.lyricoffset;
+    // The words on screen never go back a little (a small correction waits
+    // instead); a real jump (a seek, a new song, a new offset) goes through
+    if (m.track === shownTrack && cfg.lyricoffset === shownOffset && pos < shownPos && shownPos - pos < 2.5) pos = shownPos;
+    shownPos = pos;
+    shownTrack = m.track;
+    shownOffset = cfg.lyricoffset;
     line = L.status === 'synced' ? lyrics.lineAt(L.lines, pos) : -1;
 
     ss.show = show.eased;

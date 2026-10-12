@@ -236,6 +236,16 @@
     check('song clock: consistently behind → steps back by the smallest lead, never backwards', !back && near(K.position(14000), 38.6, 0.01), K.position(14000));
     K.timeline(40, 200, 15000);
     check('song clock: a report ahead is taken', near(K.position(16000), 41, 0.01), K.position(16000));
+    // Far behind: one report could be a very late snapshot; a second that agrees is going back
+    K.timeline(20, 200, 16000);
+    check('song clock: one report far behind waits for a second', near(K.position(16500), 41.5, 0.01), K.position(16500));
+    K.timeline(21, 200, 17000);
+    check('song clock: a second one that agrees goes back', near(K.position(17000), 21, 0.01), K.position(17000));
+    // A short hold (silence) is not a pause: a stale report after it is still checked
+    K.setPlaying(false, 18000, true);
+    K.setPlaying(true, 18300, true);
+    K.timeline(21.5, 200, 19000);
+    check('song clock: after a short hold a late report does not pull it back', near(K.position(19000), 22.7, 0.01), K.position(19000));
     K.setPlaying(false, 8000);
     check('song clock: paused, it stands still', near(K.position(8000), K.position(20000)), [K.position(8000), K.position(20000)]);
 

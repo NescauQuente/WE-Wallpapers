@@ -49,6 +49,7 @@
     var loopAt = -1, loopPos = 0;     // a start report repeated near the end (ms, s), -1 = none
     var fresh = true;   // the next report is taken as is (new song, after a pause)
     var leads = [];     // how far behind the clock the last reports were (s)
+    var backPos = -1, backAt = 0;   // a report far behind, waiting for a second one (s, ms)
 
     // Seconds of play since baseAt (none while paused)
     function played(nowMs) {
@@ -107,10 +108,13 @@
       loopAt = -1;
       fresh = true;
       leads.length = 0;
+      backPos = -1;
       baseAt = typeof nowMs === 'number' && isFinite(nowMs) ? nowMs : -1;
     }
 
-    function setPlaying(p, nowMs) {
+    // soft: a short hold (silence), not a real pause: the next report is
+    // still checked against the clock
+    function setPlaying(p, nowMs, soft) {
       nowMs = ms(nowMs);
       p = !!p;
       if (p === playing) {
@@ -120,8 +124,9 @@
       loopAt = -1;
       rebase(nowMs);
       playing = p;
-      fresh = true;
+      if (!soft) fresh = true;
       leads.length = 0;
+      backPos = -1;
     }
 
     // A real report: the song is at `pos` (s) at nowMs; d = its duration (0 = unknown)
@@ -157,9 +162,21 @@
         leads.length = 0;
         if (diff < 0.15) { has = true; return; }
         pos = shown - diff;
+      } else if (!fresh && playing && diff > STALE) {
+        // Far behind: going back in the song, or a very late snapshot. Only a
+        // second report that agrees (it moved on with the time) goes back
+        leads.length = 0;
+        var agrees = backPos >= 0 && Math.abs(pos - backPos - (nowMs - backAt) / 1000) < 0.75;
+        if (!agrees) {
+          backPos = pos;
+          backAt = nowMs;
+          has = true;
+          return;
+        }
       } else {
         leads.length = 0;
       }
+      backPos = -1;
       fresh = false;
       rebase(nowMs);
       base = pos;
