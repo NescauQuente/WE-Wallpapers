@@ -11,6 +11,12 @@
  * starts at 0 when the song starts playing, which is right when the song is
  * heard from its start. Pausing freezes the clock, blending included.
  *
+ * Reports are snapshots that can reach us late (the player took them a
+ * moment before), never early: so a report a little behind the clock is
+ * most likely stale and does not pull the lyrics back. Only when several in a
+ * row are all behind does the clock step back, by the smallest of those leads
+ * (the freshest report). A report ahead of the clock is always taken.
+ *
  * Every call takes the time from the caller (performance.now(), in ms), so
  * the clock is deterministic: the tests pass the times they want. A call
  * without a time uses performance.now().
@@ -20,6 +26,8 @@
 
   var BLEND = 0.4;    // s of play: how long a small correction takes to blend in
   var SNAP = 1.0;     // s: a report farther than this from the estimate is a seek
+  var STALE = 2.5;   // s: a report up to this far behind the clock may just be late
+  var BEHIND = 3;     // reports in a row behind the clock before it steps back
   var LOOP = 1.5;     // s: a repeated start report this close to the end may be the song starting over
 
   // The caller's time, or now when it gave none (a missing time would stop the clock)
@@ -39,6 +47,8 @@
     var dur = 0;        // s, 0 = unknown
     var lastPos = -1, lastDur = -1;   // the last report
     var loopAt = -1, loopPos = 0;     // a start report repeated near the end (ms, s), -1 = none
+    var fresh = true;   // the next report is taken as is (new song, after a pause)
+    var leads = [];     // how far behind the clock the last reports were (s)
 
     // Seconds of play since baseAt (none while paused)
     function played(nowMs) {
@@ -95,6 +105,8 @@
       dur = 0;
       lastPos = lastDur = -1;
       loopAt = -1;
+      fresh = true;
+      leads.length = 0;
       baseAt = typeof nowMs === 'number' && isFinite(nowMs) ? nowMs : -1;
     }
 
@@ -108,6 +120,8 @@
       loopAt = -1;
       rebase(nowMs);
       playing = p;
+      fresh = true;
+      leads.length = 0;
     }
 
     // A real report: the song is at `pos` (s) at nowMs; d = its duration (0 = unknown)
@@ -132,9 +146,23 @@
       lastDur = d;
       if (d > 0) dur = d;
       var shown = position(nowMs);
+      var diff = shown - pos;
+      if (!fresh && playing && diff > 0 && diff <= STALE) {
+        // Behind the clock: probably a late snapshot. Step back only when the
+        // last few all were, and only by the smallest lead
+        leads.push(diff);
+        if (leads.length > BEHIND) leads.shift();
+        if (leads.length < BEHIND) { has = true; return; }
+        diff = Math.min.apply(null, leads);
+        leads.length = 0;
+        if (diff < 0.15) { has = true; return; }
+        pos = shown - diff;
+      } else {
+        leads.length = 0;
+      }
+      fresh = false;
       rebase(nowMs);
       base = pos;
-      var diff = shown - pos;
       if (diff > SNAP || diff < -SNAP) {
         gap = 0;
         gapRate = 0;

@@ -226,7 +226,16 @@
     K.timeline(30.6, 200, 6000);
     var back = false, prev = K.position(6000);
     for (var tm = 6000; tm <= 8000; tm += 16) { var pp = K.position(tm); if (pp < prev - 1e-9) back = true; prev = pp; }
-    check('song clock: a close report blends in, never backwards', !back && near(K.position(8000), 32.6, 0.01), K.position(8000));
+    check('song clock: one report a little behind is a late snapshot, ignored', !back && near(K.position(8000), 33, 0.01), K.position(8000));
+    // Reports behind several times in a row: it steps back by the smallest lead, never backwards
+    K.timeline(33.5, 200, 9000);
+    K.timeline(34.6, 200, 10000);
+    K.timeline(35.4, 200, 11000);
+    back = false; prev = K.position(11000);
+    for (tm = 11000; tm <= 14000; tm += 16) { pp = K.position(tm); if (pp < prev - 1e-9) back = true; prev = pp; }
+    check('song clock: consistently behind → steps back by the smallest lead, never backwards', !back && near(K.position(14000), 38.6, 0.01), K.position(14000));
+    K.timeline(40, 200, 15000);
+    check('song clock: a report ahead is taken', near(K.position(16000), 41, 0.01), K.position(16000));
     K.setPlaying(false, 8000);
     check('song clock: paused, it stands still', near(K.position(8000), K.position(20000)), [K.position(8000), K.position(20000)]);
 

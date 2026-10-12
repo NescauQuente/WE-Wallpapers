@@ -460,14 +460,33 @@
     loadLyrics(d);
   }
 
+  // Wallpaper Engine tells about a pause a moment late, but the audio goes
+  // silent at once: the lyrics stop with it (and go on when the sound is back)
+  var HUSH = 0.25;     // s of total silence while 'playing' that holds the song's clock
+  var hush = false;
+  var heard = false;   // this song has been heard (so the audio is really reaching us)
+
+  function clockPlaying() {
+    return media.state.playing && !hush;
+  }
+
+  function updateHush() {
+    if (audio.state.raw >= 0.001) heard = true;
+    var h = isWE && heard && cfg.audioenabled && media.state.playing && audio.state.silentFor > HUSH;
+    if (h === hush) return;
+    hush = h;
+    songclock.setPlaying(clockPlaying(), now());
+  }
+
   media.state.onChange = function () {
     var m = media.state, t = now();
     if (m.track !== songTrack) {
       // A new song: its clock starts now (a timeline report may follow)
       songTrack = m.track;
       songclock.reset(t);
+      heard = false;
     }
-    songclock.setPlaying(m.playing, t);
+    songclock.setPlaying(clockPlaying(), t);
     albumColors();
     applyCover();
     syncLyrics();
@@ -513,6 +532,7 @@
     frames++;
     if (demo) demoTick();
     audio.update(dt, cfg.audioenabled, cfg.audiosensitivity);
+    updateHush();
     updateMusic(dt);
     updateShow(dt);
     easeColors(dt);
