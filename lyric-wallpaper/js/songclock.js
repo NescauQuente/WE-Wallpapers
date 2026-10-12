@@ -12,13 +12,21 @@
  * heard from its start. Pausing freezes the clock, blending included.
  *
  * Every call takes the time from the caller (performance.now(), in ms), so
- * the clock is deterministic: the tests pass the times they want.
+ * the clock is deterministic: the tests pass the times they want. A call
+ * without a time uses performance.now().
  */
 (function (S) {
   'use strict';
 
   var BLEND = 0.4;    // s of play: how long a small correction takes to blend in
   var SNAP = 1.0;     // s: a report farther than this from the estimate is a seek
+  var LOOP = 1.5;     // s: a repeated start report this close to the end may be the song starting over
+
+  // The caller's time, or now when it gave none (a missing time would stop the clock)
+  function ms(nowMs) {
+    if (typeof nowMs === 'number' && isFinite(nowMs)) return nowMs;
+    return window.performance && performance.now ? performance.now() : Date.now();
+  }
 
   function make() {
     var playing = false;
@@ -30,6 +38,7 @@
     var has = false;    // a real report arrived for this song
     var dur = 0;        // s, 0 = unknown
     var lastPos = -1, lastDur = -1;   // the last report
+    var loopAt = -1, loopPos = 0;     // a start report repeated near the end (ms, s), -1 = none
 
     // Seconds of play since baseAt (none while paused)
     function played(nowMs) {
@@ -58,9 +67,20 @@
     // The smooth position at nowMs (s), between 0 and the duration when known.
     // A song that is playing but whose clock has not started yet starts now.
     function position(nowMs) {
+      nowMs = ms(nowMs);
       if (baseAt < 0 && playing) baseAt = nowMs;
       var s = played(nowMs), p = base + s + gapAfter(s);
-      if (dur > 0 && p > dur) p = dur;
+      if (dur > 0 && p >= dur) {
+        if (loopAt >= 0) {
+          // The song played to its end and had started over (see timeline)
+          base = loopPos;
+          baseAt = loopAt;
+          gap = gapRate = 0;
+          loopAt = -1;
+          return position(nowMs);
+        }
+        p = dur;
+      }
       return p > 0 ? p : 0;
     }
 
@@ -74,15 +94,18 @@
       has = false;
       dur = 0;
       lastPos = lastDur = -1;
+      loopAt = -1;
       baseAt = typeof nowMs === 'number' && isFinite(nowMs) ? nowMs : -1;
     }
 
     function setPlaying(p, nowMs) {
+      nowMs = ms(nowMs);
       p = !!p;
       if (p === playing) {
         if (p && baseAt < 0) baseAt = nowMs;
         return;
       }
+      loopAt = -1;
       rebase(nowMs);
       playing = p;
     }
@@ -93,8 +116,18 @@
       d = +d;
       if (!isFinite(pos) || pos < 0) return;
       if (!isFinite(d) || d < 0) d = 0;
-      // Some players repeat their last report while the song goes on: stale
-      if (has && playing && pos === lastPos && d === lastDur) return;
+      nowMs = ms(nowMs);
+      // Some players repeat their last report while the song goes on: stale.
+      // A start report repeated at the end of the song may be the song
+      // starting over (repeat one): it applies if the clock reaches the end.
+      if (has && playing && pos === lastPos && d === lastDur) {
+        if (dur > 0 && pos < LOOP && position(nowMs) >= dur - LOOP) {
+          loopAt = nowMs;
+          loopPos = pos;
+        }
+        return;
+      }
+      loopAt = -1;
       lastPos = pos;
       lastDur = d;
       if (d > 0) dur = d;

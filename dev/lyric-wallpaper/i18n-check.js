@@ -30,12 +30,16 @@ S.settings.SCHEMA.forEach((s) => {
 });
 // Choices that read the same in every language need no translation
 const SAME = /^o\.fpslimit\.(30|60)$/;
-// Pieces a translation must keep as they are: the code prefix, the Esc key
-// (French keyboards label it "Échap"), product and service names, the path
-// of the Windows wallpaper
+// Pieces a translation must keep as they are: the code prefix, the M and Esc
+// keys (French keyboards label Esc "Échap"; M is the Latin letter on its own,
+// "Mキー" is fine), product and service names, the path of the Windows wallpaper
+const KEY_M = /(^|[^A-Za-z])M([^A-Za-z]|$)/;
 const KEEP = [
   ['share.placeholder', /LYRIC1:/],
   ['menu.close', /Esc|Échap/],
+  ['menu.hint', KEY_M],
+  ['menu.hint', /Esc|Échap/],
+  ['toast.open', KEY_M],
   ['share.copied', /Wallpaper Engine/],
   ['show.noMedia', /Wallpaper Engine/],
   ['n.lyrics', /lrclib\.net/],

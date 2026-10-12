@@ -22,7 +22,7 @@ Run them after changing the wallpaper. The browser suite is heavier (software re
 node dev/lyric-wallpaper/i18n-check.js
 ```
 
-Every `js/lang/<code>.js` must have every English text, only known keys, and keep the parts that are not translated (`LYRIC1:`, Esc, Wallpaper Engine, lrclib.net, the `C:\Windows\Web\Wallpaper\Windows\img0.jpg` path), and the "Before the music" note must name **My image** exactly as that language's choice reads. It also checks language detection (Wallpaper Engine `zh-chs`/`nb-no`, browser `zh-Hant-HK`, underscore spellings like `pt_br`…), the pt-pt → pt fallback, right-to-left Arabic, and regenerates `project.json` to check the Wallpaper Engine panel gets every locale and the "My image" file picker.
+Every `js/lang/<code>.js` must have every English text, only known keys, and keep the parts that are not translated (`LYRIC1:`, the M and Esc keys, Wallpaper Engine, lrclib.net, the `C:\Windows\Web\Wallpaper\Windows\img0.jpg` path), and the "Before the music" note must name **My image** exactly as that language's choice reads. It also checks language detection (Wallpaper Engine `zh-chs`/`nb-no`, browser `zh-Hant-HK`, underscore spellings like `pt_br`…), the pt-pt → pt fallback, right-to-left Arabic, and regenerates `project.json` to check the Wallpaper Engine panel gets every locale and the "My image" file picker.
 
 ### Browser suite
 

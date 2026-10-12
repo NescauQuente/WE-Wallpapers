@@ -31,6 +31,13 @@
     onTimeline: null      // function (position, duration) — a timeline report
   };
 
+  // The last report, apart from state.timeline (which a new song clears), and
+  // when the song last changed: Wallpaper Engine may send a song's timeline
+  // just before its title, at startup and on a track change
+  var CARRY = 1500;       // ms: a report this recent may belong to the song that follows
+  var last = { position: 0, duration: -1, at: -Infinity, fresh: false };
+  var songAt = -Infinity;
+
   function now() {
     return window.performance && performance.now ? performance.now() : Date.now();
   }
@@ -122,12 +129,25 @@
     state.album = album;
     state.track++;
     // A new song: its timeline is unknown until the player reports it
-    var tl = state.timeline;
+    var tl = state.timeline, t = now(), prevSong = songAt;
+    songAt = t;
     tl.has = false;
     tl.position = 0;
     tl.duration = 0;
     tl.at = 0;
     changed();
+    // ...unless its report came just before: one that arrived after the
+    // previous song started and brought a new duration (not the previous
+    // song's). It goes out after onChange, so main resets the clock first.
+    if (last.at >= prevSong && t - last.at < CARRY && last.fresh && last.duration > 0) {
+      tl.has = true;
+      tl.position = last.position;
+      tl.duration = last.duration;
+      tl.at = last.at;
+      var pos = last.position + (state.playing ? (t - last.at) / 1000 : 0);
+      if (pos > last.duration) pos = last.duration;
+      if (state.onTimeline) state.onTimeline(pos, last.duration);
+    }
   }
 
   function setThumbnail(e) {
@@ -180,6 +200,10 @@
     tl.position = pos;
     tl.duration = dur;
     tl.at = now();
+    last.fresh = dur !== last.duration;
+    last.position = pos;
+    last.duration = dur;
+    last.at = tl.at;
     if (state.onTimeline) state.onTimeline(pos, dur);
   }
 

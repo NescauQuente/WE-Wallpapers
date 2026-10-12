@@ -104,8 +104,10 @@
   // %5C), so a '%' in its file names stays as it is. '#' and '?' would cut the
   // path short and quotes or parentheses would end a CSS url(…), so they are
   // escaped too: the result is safe in url("…") and url('…'). Network shares
-  // (\\server\share\…) become file://server/share/…. A value that is already a
-  // URL is kept; '' (or a path that cannot be encoded) gives ''.
+  // (\\server\share\…) become file://server/share/…, and a relative path
+  // ("images/a.jpg", a file inside the wallpaper folder) stays relative to the
+  // page. A value that is already a URL is kept; '' (or a path that cannot be
+  // encoded) gives ''.
   function fileUrl(path) {
     path = String(path || '').trim();
     if (!path) return '';
@@ -116,9 +118,10 @@
     // \\?\C:\… and \\?\UNC\server\… are long-path spellings of C:\… and \\server\…
     path = path.replace(/\\/g, '/').replace(/^\/\/[?.]\/(unc\/)?/i, function (m, unc) { return unc ? '//' : ''; });
     var share = /^\/\/[^/]/.test(path) && !/^\/+[a-z]:/i.test(path);
+    var prefix = share ? 'file://' : /^(\/|[a-z]:)/i.test(path) ? 'file:///' : '';
     path = path.replace(/^\/+/, '');
     try { path = encodeURI(path); } catch (e) { return ''; }
-    return (share ? 'file://' : 'file:///') + path.replace(/[#?'()]/g, function (c) {
+    return prefix + path.replace(/[#?'()]/g, function (c) {
       return '%' + c.charCodeAt(0).toString(16).toUpperCase();
     });
   }

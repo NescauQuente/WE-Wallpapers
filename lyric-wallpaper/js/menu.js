@@ -422,8 +422,11 @@
         if (e.key === 'Escape') target.blur();
         return;
       }
-      if (e.key === 'm' || e.key === 'M') toggle();
-      else if (e.key === 'Escape' && !panel.hidden) toggle();
+      // The M key also works with a non-Latin layout active (Cyrillic, Greek,
+      // Arabic…: there it types another letter, so go by the key's place)
+      var k = e.key;
+      if (k === 'm' || k === 'M' || (e.code === 'KeyM' && k && k.length === 1 && k.charCodeAt(0) > 127)) toggle();
+      else if (k === 'Escape' && !panel.hidden) toggle();
     });
   }
 

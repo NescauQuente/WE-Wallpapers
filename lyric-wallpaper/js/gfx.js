@@ -15,6 +15,8 @@
  *     idle look from the center out while the idle zooms in and softens.
  * The canvas has premultiplied alpha: it is opaque except for the 'image'
  * look, where alpha is the part of the show already revealed.
+ * Rendering is on demand: needsFrames() says when a frame is due (motion, or
+ * a picture to settle), so a still wallpaper costs no GPU at all.
  *
  * Lyric.gfx2d: the same API on Canvas 2D (gradients and sprites, a plain
  * cross-fade) for when WebGL2 is unavailable.
@@ -29,7 +31,8 @@
   // x from about -0.9 to 0.9, y up). Each one: center line
   // y = a0 + a1·x + a2·sin(a3·x + b0) + b1·sin(b2·x + b3), half width w,
   // twisting along x as cos(t0·x + t1), opacity, tone (0 = deep blue …
-  // 1 = pale) and drift (how fast it flows with idle motion).
+  // 1 = pale) and drift (how fast it flows with idle motion; keep it a
+  // multiple of 0.1, see RIB_PERIOD).
   var RIBBONS = new Float32Array([
     // a0     a1     a2     a3      b0     b1     b2     b3      t0     t1     w      alpha   tone  drift  -  -
     -0.02,  0.30,  0.16,  1.9,    0.9,   0.05,  4.1,   0.3,    1.2,   0.4,   0.17,  0.40,   0.90, 0.6,  0, 0,
@@ -210,7 +213,8 @@
     '}',
     '',
     // ---- Show ----------------------------------------------------------------
-    // Smooth upscale of the tiny cover (cubic B-spline from 4 bilinear taps)
+    // Smooth upscale of the tiny cover (cubic B-spline from 4 bilinear taps).
+    // textureLod: no derivatives inside the style branch (D3D keeps it a branch)
     'vec3 coverAt(vec2 uv) {',
     '  vec2 st = uv * u_coverSize - 0.5, i = floor(st), f = st - i;',
     '  vec2 f2 = f * f, f3 = f2 * f;',
@@ -220,8 +224,8 @@
     '  vec2 w3 = f3 / 6.0;',
     '  vec2 g0 = w0 + w1, g1 = w2 + w3;',
     '  vec2 h0 = (i - 0.5 + w1 / g0) / u_coverSize, h1 = (i + 1.5 + w3 / g1) / u_coverSize;',
-    '  return g0.y * (g0.x * texture(u_cover, h0).rgb + g1.x * texture(u_cover, vec2(h1.x, h0.y)).rgb)',
-    '       + g1.y * (g0.x * texture(u_cover, vec2(h0.x, h1.y)).rgb + g1.x * texture(u_cover, h1).rgb);',
+    '  return g0.y * (g0.x * textureLod(u_cover, h0, 0.0).rgb + g1.x * textureLod(u_cover, vec2(h1.x, h0.y), 0.0).rgb)',
+    '       + g1.y * (g0.x * textureLod(u_cover, vec2(h0.x, h1.y), 0.0).rgb + g1.x * textureLod(u_cover, h1, 0.0).rgb);',
     '}',
     '',
     'vec3 aurora(vec2 q, float asp, float t) {',
@@ -290,9 +294,10 @@
     '  return col;',
     '}',
     '',
+    // The square cover fills the screen whatever its shape (portrait too)
     'vec3 coverBg(vec2 q, float asp, float t) {',
     '  vec2 w = vec2(noise(q * 1.4 + t * 0.05), noise(q * 1.4 + 9.3 - t * 0.04)) - 0.5;',
-    '  vec2 uv = (q / asp) / (1.12 + 0.04 * sin(t * 0.05)) + 0.5 + 0.05 * w',
+    '  vec2 uv = (q / max(asp, 1.0)) / (1.12 + 0.04 * sin(t * 0.05)) + 0.5 + 0.05 * w',
     '    + 0.02 * vec2(sin(t * 0.031), cos(t * 0.027));',
     '  vec3 c = max(coverAt(uv), 0.0);',
     '  c = max(mix(vec3(dot(c, vec3(0.299, 0.587, 0.114))), c, 1.15), 0.0);',
@@ -398,9 +403,10 @@
     '    a = mix(a, 1.0, line * 0.85);',
     '    if (u_idle == 3) { rgb += u_colA * ahead * 0.2; a = max(a, ahead * 0.2); }',
     '  }',
-    // Dithering: no banding in the soft gradients
+    // Dithering: no banding in the soft gradients. Premultiplied alpha: the
+    // color never exceeds the alpha (the glows over the user's image)
     '  rgb += (hash(gl_FragCoord.xy) - 0.5) / 255.0 * a;',
-    '  o = vec4(rgb, a);',
+    '  o = vec4(clamp(rgb, 0.0, a), a);',
     '}'
   ].join('\n');
 
@@ -440,40 +446,54 @@
     }
   }
 
+  // A color channel kept in 0–1 (NaN or junk → 0: never a NaN uniform)
+  function ch(v) {
+    return v > 0 ? (v < 1 ? +v : 1) : 0;
+  }
+
   // Album colors → glow colors bright enough to light the show, and a dark
   // base with the hue of the background color
   function glowColor(src, dst, min) {
-    var m = Math.max(src[0], src[1], src[2]);
+    var r = ch(src[0]), g = ch(src[1]), b = ch(src[2]), m = Math.max(r, g, b);
     if (m < 0.02) {
       dst[0] = dst[1] = dst[2] = min;
       return;
     }
     var k = m < min ? min / m : 1;
-    dst[0] = src[0] * k;
-    dst[1] = src[1] * k;
-    dst[2] = src[2] * k;
+    dst[0] = r * k;
+    dst[1] = g * k;
+    dst[2] = b * k;
   }
 
   function baseColor(src, dst) {
-    var m = Math.max(src[0], src[1], src[2], 0.1);
-    dst[0] = src[0] / m * 0.07 + 0.008;
-    dst[1] = src[1] / m * 0.07 + 0.008;
-    dst[2] = src[2] / m * 0.07 + 0.008;
+    var r = ch(src[0]), g = ch(src[1]), b = ch(src[2]), m = Math.max(r, g, b, 0.1);
+    dst[0] = r / m * 0.07 + 0.008;
+    dst[1] = g / m * 0.07 + 0.008;
+    dst[2] = b / m * 0.07 + 0.008;
   }
 
   var DEF_A = [0.36, 0.45, 1.0], DEF_B = [0.75, 0.35, 1.0], DEF_BG = [0.2, 0.25, 0.6];
 
-  function needsFrames(p) {
-    return p.show > 0.001 || (!!p.idleMotion && p.idle !== 'image');
-  }
+  // The ribbons repeat after this much idle time (their drifts are multiples
+  // of 0.1, see RIBBONS): the idle clock wraps there without a jump
+  var RIB_PERIOD = 4000 * Math.PI;
 
   // ---------------------------------------------------------------------------
   // WebGL2
   // ---------------------------------------------------------------------------
   var gl = null, canvas = null, ready = false;
   var prog = null, U = {}, vao = null, coverTex = null, cover = null;
-  var W = 0, H = 0, idleT = 0, lastT = -1;
+  var W = 0, H = 0, lastT = -1, idleT = 0, showT = 0;
+  var shown = 0;       // the show amount of the last frame drawn
+  var stale = true;    // the canvas lost its picture (start, resize, context restored)
   var cA = new Float32Array(3), cB = new Float32Array(3), cBase = new Float32Array(3);
+
+  // True while something moves, and until one frame settles the picture: the
+  // first one, after a resize or a restored context, and the idle frame once
+  // the show has faded out
+  function needsFrames(p) {
+    return ready && (stale || p.show > 0.001 || shown > 0.001 || (!!p.idleMotion && p.idle !== 'image'));
+  }
 
   var UNIFORMS = ['u_res', 'u_time', 'u_itime', 'u_idle', 'u_style', 'u_show', 'u_colA', 'u_colB',
     'u_base', 'u_audio', 'u_parts', 'u_coverOn', 'u_cover', 'u_coverSize', 'u_rib'];
@@ -549,10 +569,12 @@
       try {
         setup();
         ready = true;
+        stale = true;   // the canvas is blank: needsFrames() asks for a frame
       } catch (err) {
         ready = false;
       }
     });
+    stale = true;
     return true;
   }
 
@@ -562,17 +584,19 @@
     if (canvas && (canvas.width !== W || canvas.height !== H)) {
       canvas.width = W;
       canvas.height = H;
+      stale = true;
     }
   }
 
   function setCover(src) {
     cover = shrinkCover(src, cover);
     if (ready && cover) uploadCover();
+    stale = true;
   }
 
   /*
    * p: {
-   *   time (s), idle ('win11' | 'win11dark' | 'win10' | 'image'), idleMotion,
+   *   time (s, monotonic), idle ('win11' | 'win11dark' | 'win10' | 'image'), idleMotion,
    *   show (0 = idle … 1 = show, already eased),
    *   style ('aurora' | 'spotlights' | 'cover' | 'minimal'),
    *   colA, colB ([r, g, b] 0–1: the two light colors; dark ones are lifted),
@@ -585,9 +609,20 @@
   function render(p) {
     if (!ready || gl.isContextLost()) return;
     if (!W) resize(canvas.width, canvas.height);
-    var t = +p.time || 0;
-    if (p.idleMotion && lastT >= 0 && t > lastT) idleT += Math.min(t - lastT, 0.25);
+    var s = Math.min(1, Math.max(0, +p.show || 0));
+    // Both clocks add up the steps of p.time (at most 0.25 s, so a pause makes
+    // no jump) and stay small: a float uniform counting days of uptime would
+    // step the motion and jag the edges. The show clock wraps while the show
+    // is hidden (or every ~18 h when it never is), the idle one where the
+    // ribbons repeat.
+    var t = +p.time || 0, dt = lastT >= 0 && t > lastT ? Math.min(t - lastT, 0.25) : 0;
     lastT = t;
+    if (p.idleMotion) idleT += dt;
+    if (idleT > RIB_PERIOD && p.idle !== 'win10') idleT %= RIB_PERIOD;
+    showT += dt;
+    if (s <= 0.001 ? showT > 1000 : showT > 65536) showT %= 1000;
+    shown = s;
+    stale = false;
     var k = p.reactive > 0 ? p.reactive : 0;
     glowColor(p.colA || DEF_A, cA, 0.6);
     glowColor(p.colB || DEF_B, cB, 0.6);
@@ -597,11 +632,11 @@
     gl.viewport(0, 0, W, H);
     gl.useProgram(prog);
     gl.uniform2f(U.u_res, W, H);
-    gl.uniform1f(U.u_time, t);
+    gl.uniform1f(U.u_time, showT);
     gl.uniform1f(U.u_itime, idleT);
     gl.uniform1i(U.u_idle, IDLE[p.idle] !== undefined ? IDLE[p.idle] : 0);
     gl.uniform1i(U.u_style, STYLE[p.style] !== undefined ? STYLE[p.style] : 0);
-    gl.uniform1f(U.u_show, Math.min(1, Math.max(0, +p.show || 0)));
+    gl.uniform1f(U.u_show, s);
     gl.uniform3fv(U.u_colA, cA);
     gl.uniform3fv(U.u_colB, cB);
     gl.uniform3fv(U.u_base, cBase);
@@ -636,7 +671,9 @@
     vig: null,                        // cached vignette
     cover: null, tiny: null,
     spr: null, sprKey: [-1, -1, -1, -1, -1, -1, -1, -1, -1],
-    baseCss: '#000', pA: new Float32Array(3), pB: new Float32Array(3), pBase: new Float32Array(3)
+    baseCss: '#000', pA: new Float32Array(3), pB: new Float32Array(3), pBase: new Float32Array(3),
+    shown: 0, stale: true,            // as in the WebGL renderer
+    lastT: -1, t: 0                   // the show clock (steps of p.time, as there)
   };
 
   function css(r, g, b, a) {
@@ -841,7 +878,7 @@
   }
 
   function show2(x, p, W, H) {
-    var t = +p.time || 0, k = p.reactive > 0 ? p.reactive : 0;
+    var t = c2.t, k = p.reactive > 0 ? p.reactive : 0;
     var bass = (p.bass || 0) * k, beat = (p.beat || 0) * k;
     var pk = 0.22 * bass + 0.16 * beat, pulse = 1 + pk / (1 + 0.6 * pk), sp = c2.spr, asp = W / H;
     var X = W / 2, Y = H / 2, i;
@@ -880,8 +917,10 @@
       sprite2(x, sp.A, X, Y + 0.6 * H, H * 0.8, 0.12 * pulse);
     }
     if (p.particles) {
+      // Spread by the 2D plastic-number sequence (the golden ratio for both
+      // axes would put every dot on one diagonal line until they drift apart)
       for (i = 0; i < 60; i++) {
-        var hx = (i * 0.6180339) % 1, hy = (i * 0.3819660 + 0.2) % 1, hs = (i * 0.7548777) % 1;
+        var hx = (i * 0.7548777 + 0.5) % 1, hy = (i * 0.5698403 + 0.5) % 1, hs = (i * 0.6180339) % 1;
         var py = 1 - ((hy + t * (0.015 + 0.02 * hs)) % 1);
         var pxx = (hx + 0.01 * Math.sin(t * 0.5 + i)) * W;
         sprite2(x, sp.dot, pxx, py * H, H * (0.004 + 0.008 * hs), (0.25 + 0.2 * Math.sin(t * (0.7 + hs) + i)) * (0.8 + 0.5 * bass));
@@ -900,6 +939,11 @@
     c2.W = W;
     c2.H = H;
     var s = Math.min(1, Math.max(0, +p.show || 0)), image = p.idle === 'image';
+    var t = +p.time || 0;
+    c2.t += c2.lastT >= 0 && t > c2.lastT ? Math.min(t - c2.lastT, 0.25) : 0;
+    c2.lastT = t;
+    c2.shown = s;
+    c2.stale = false;
     glowColor(p.colA || DEF_A, c2.pA, 0.6);
     glowColor(p.colB || DEF_B, c2.pB, 0.6);
     baseColor(p.colBg || DEF_BG, c2.pBase);
@@ -933,6 +977,7 @@
   // blur nicely without a filter
   function setCover2(src) {
     c2.cover = shrinkCover(src, c2.cover);
+    c2.stale = true;
     if (!c2.cover) return;
     var t = c2.tiny || canvas2(16, 16), x = t.getContext('2d');
     x.imageSmoothingEnabled = true;
@@ -954,6 +999,7 @@
     }
     c2.canvas = c;
     c2.ctx = x;
+    c2.stale = true;
     return !!x;
   }
 
@@ -963,6 +1009,7 @@
     if (c2.canvas && (c2.canvas.width !== c2.W || c2.canvas.height !== c2.H)) {
       c2.canvas.width = c2.W;
       c2.canvas.height = c2.H;
+      c2.stale = true;
     }
   }
 
@@ -972,7 +1019,7 @@
     setCover: setCover2,
     render: render2,
     // No idle motion here: only the show and the transition move
-    needsFrames: function (p) { return p.show > 0.001; },
+    needsFrames: function (p) { return !!c2.ctx && (c2.stale || p.show > 0.001 || c2.shown > 0.001); },
     ok: function () { return !!c2.ctx; },
     canvas: function () { return c2.canvas; }
   };

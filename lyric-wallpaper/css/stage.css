@@ -7,7 +7,8 @@
  *   data-anim = karaoke | words | fade     (lyricanim)
  *   data-font = segoe | bahnschrift | …    (lyricfont)
  * Every id, class and variable is prefixed with "ls-" (--p is the progress of
- * the current line, 0 to 1, written by stage.js every frame).
+ * the current line, 0 to 1, written by stage.js every frame on the element
+ * that uses it: the karaoke fill or the "♪ ♪ ♪" notes).
  *
  * Cheap on purpose: lines move with transform and opacity transitions; per
  * frame only --p and the bass pulse (a transform) change. No CSS filters or
@@ -30,6 +31,9 @@
   --ls-case: none;
   --ls-lh: 1.14;
   --ls-ui: "Segoe UI Variable Text", "Segoe UI", system-ui, -apple-system, sans-serif;
+  /* The unit of the cards and messages: 1 % of the height, narrower on a
+     portrait screen */
+  --ls-u: min(1vh, 1.25vw);
   position: absolute;
   inset: 0;
   overflow: hidden;
@@ -41,7 +45,8 @@
 }
 /* Hidden (no show): nothing paints and the note animations stop */
 .ls-wrap.ls-off { visibility: hidden; }
-.ls-wrap.ls-off * { animation-play-state: paused; }
+.ls-wrap.ls-off *,
+.ls-lyrics:not(.ls-on) * { animation-play-state: paused; }
 
 /* ---------- Synced lyrics: the current line, the previous and the next ---------- */
 /* A zero-height box on the anchor line; the lines are placed around it by
@@ -52,27 +57,29 @@
   right: 8vw;
   top: 50%;
   height: 0;
-  font-size: calc(var(--ls-size) * min(7.2vh, 4.6vw));
+  font-size: calc(var(--ls-size) * min(7.8vh, 6vw));
   opacity: 0;
   visibility: hidden;
   transition: opacity 0.6s ease, visibility 0s linear 0.6s;
 }
+/* (it comes in once the big card is mostly gone) */
 .ls-lyrics.ls-on {
   opacity: 1;
   visibility: visible;
-  transition: opacity 0.8s ease 0.15s, visibility 0s;
+  transition: opacity 0.7s ease 0.4s, visibility 0s;
 }
+/* (raised as the size grows, to stay clear of the corner card) */
 .ls-wrap[data-pos="lower"] .ls-lyrics {
-  top: 72%;
+  top: calc(70% - max(0px, (var(--ls-size) - 1) * 12vh));
   left: 10vw;
   right: 10vw;
-  font-size: calc(var(--ls-size) * min(5.6vh, 3.7vw));
+  font-size: calc(var(--ls-size) * min(6vh, 4.8vw));
 }
 .ls-wrap[data-pos="left"] .ls-lyrics {
   top: 47%;
   left: 7vw;
   right: 28vw;
-  font-size: calc(var(--ls-size) * min(8.4vh, 5.4vw));
+  font-size: calc(var(--ls-size) * min(9vh, 6.8vw));
 }
 
 .ls-line {
@@ -93,6 +100,8 @@
 .ls-line[hidden] { display: none; }
 .ls-wrap[data-pos="left"] .ls-line { text-align: left; transform-origin: 0 0; }
 .ls-line.ls-cur { opacity: 1; }
+/* A pause that ends fades fast: the next line comes up through its place */
+.ls-line.ls-gap.ls-out { transition: transform 0.6s ease, opacity 0.25s ease; }
 .ls-ctx .ls-line.ls-prev { opacity: 0.36; }
 .ls-ctx .ls-line.ls-next { opacity: 0.5; }
 /* While measuring the natural width of a line (fit to two rows) */
@@ -144,18 +153,23 @@
 .ls-w { display: inline-block; }
 .ls-wrap[data-anim="words"] .ls-cur .ls-w {
   opacity: 0.16;
-  transform: translateY(0.16em) scale(0.96);
+  transform: translateY(0.12em) scale(0.96);
   transition: opacity 0.3s ease, transform 0.55s cubic-bezier(0.2, 0.9, 0.25, 1.15), color 0.9s ease;
 }
 .ls-wrap[data-anim="words"] .ls-cur .ls-w.ls-on { opacity: 1; transform: none; }
 .ls-wrap[data-anim="words"] .ls-cur .ls-w.ls-now { color: var(--ls-accent); }
+/* A line with right-to-left words keeps them inline (only fading), or the
+   browser could not order a mixed line right */
+.ls-bidi .ls-w { display: inline; }
 
 /* ---------- Instrumental: "♪ ♪ ♪" ---------- */
 /* The notes light up one by one as the next line comes near (--p) */
 .ls-gap .ls-in { display: flex; flex-direction: column; align-items: center; }
-.ls-wrap[data-pos="left"] .ls-gap .ls-in { align-items: flex-start; }
+.ls-wrap[data-pos="left"] .ls-gap .ls-in,
+.ls-wrap[data-pos="left"] .ls-notes { align-items: flex-start; justify-content: flex-start; }
 .ls-notes {
   display: flex;
+  justify-content: center;
   gap: 0.5em;
   font-family: "Segoe UI Symbol", "Segoe UI", system-ui, sans-serif;
   font-weight: 400;
@@ -184,6 +198,8 @@
   letter-spacing: 0.32em;
   text-transform: uppercase;
   opacity: 0.7;
+  /* (the spacing after the last letter would push it off center) */
+  margin-inline-end: -0.32em;
 }
 .ls-gap-label:empty { display: none; }
 
@@ -201,7 +217,7 @@
   visibility: hidden;
   transition: opacity 0.8s ease, visibility 0s linear 0.8s;
 }
-.ls-plain.ls-on { opacity: 1; visibility: visible; transition: opacity 1s ease 0.2s, visibility 0s; }
+.ls-plain.ls-on { opacity: 1; visibility: visible; transition: opacity 1s ease 0.4s, visibility 0s; }
 .ls-wrap[data-pos="left"] .ls-plain { left: 7vw; right: 34vw; }
 .ls-plain-text {
   font-size: calc(var(--ls-size) * min(3.7vh, 2.7vw));
@@ -236,28 +252,29 @@
   opacity: 0;
   visibility: hidden;
   transform: translateY(1.2vh) scale(0.96);
-  transition: opacity 0.7s ease, transform 0.9s cubic-bezier(0.4, 0, 0.6, 1), visibility 0s linear 0.9s;
+  transition: opacity 0.5s ease, transform 0.7s cubic-bezier(0.4, 0, 0.6, 1), visibility 0s linear 0.7s;
 }
 .ls-hero.ls-on {
   opacity: 1;
   visibility: visible;
   transform: none;
-  transition: opacity 0.9s ease 0.1s, transform 1.2s cubic-bezier(0.2, 0.8, 0.2, 1) 0.1s, visibility 0s;
+  transition: opacity 0.9s ease 0.35s, transform 1.2s cubic-bezier(0.2, 0.8, 0.2, 1) 0.35s, visibility 0s;
 }
 .ls-wrap[data-pos="left"] .ls-hero { align-items: flex-start; padding-left: 7vw; text-align: left; }
 .ls-hero-cover {
   display: block;
-  width: min(34vh, 42vw);
-  height: min(34vh, 42vw);
-  margin-bottom: 4vh;
-  border-radius: 1.4vh;
+  width: calc(34 * var(--ls-u));
+  height: calc(34 * var(--ls-u));
+  margin-bottom: calc(4 * var(--ls-u));
+  border-radius: calc(1.4 * var(--ls-u));
   object-fit: cover;
-  box-shadow: 0 2.4vh 6vh rgba(0, 0, 0, 0.5), 0 0 14vh -1vh var(--ls-halo), 0 0 0 1px rgba(255, 255, 255, 0.08);
+  box-shadow: 0 calc(2.4 * var(--ls-u)) calc(6 * var(--ls-u)) rgba(0, 0, 0, 0.5),
+    0 0 calc(14 * var(--ls-u)) calc(-1 * var(--ls-u)) var(--ls-halo), 0 0 0 1px rgba(255, 255, 255, 0.08);
   will-change: transform;
 }
 .ls-hero-title {
   max-width: 84vw;
-  font-size: min(5.4vh, 4.4vw);
+  font-size: calc(5.4 * var(--ls-u));
   font-weight: var(--ls-title-weight);
   line-height: 1.12;
   text-shadow: 0 0.05em 0.4em var(--ls-shade);
@@ -269,9 +286,9 @@
 }
 .ls-hero-artist {
   max-width: 80vw;
-  margin-top: 1.4vh;
+  margin-top: calc(1.4 * var(--ls-u));
   font-family: var(--ls-ui);
-  font-size: min(2.3vh, 2vw);
+  font-size: calc(2.3 * var(--ls-u));
   font-weight: 500;
   letter-spacing: 0.2em;
   text-transform: uppercase;
@@ -283,9 +300,9 @@
 .ls-hero-status {
   max-width: 70vw;
   min-height: 1.35em;
-  margin-top: 3.6vh;
+  margin-top: calc(3.6 * var(--ls-u));
   font-family: var(--ls-ui);
-  font-size: min(1.9vh, 1.7vw);
+  font-size: calc(1.9 * var(--ls-u));
   font-weight: 400;
   letter-spacing: 0.02em;
   line-height: 1.35;
@@ -297,12 +314,12 @@
 /* ---------- Song card: small, bottom left, while the lyrics play ---------- */
 .ls-corner {
   position: absolute;
-  left: 4.5vh;
-  bottom: 4.5vh;
+  left: calc(4.5 * var(--ls-u));
+  bottom: calc(4.5 * var(--ls-u));
   display: flex;
   align-items: center;
-  gap: 1.8vh;
-  max-width: min(40vw, 70vh);
+  gap: calc(1.8 * var(--ls-u));
+  max-width: min(84vw, calc(70 * var(--ls-u)));
   font-family: var(--ls-ui);
   letter-spacing: 0;
   opacity: 0;
@@ -320,11 +337,11 @@
 .ls-corner-cover {
   flex: none;
   display: block;
-  width: 7.4vh;
-  height: 7.4vh;
-  border-radius: 0.9vh;
+  width: calc(7.4 * var(--ls-u));
+  height: calc(7.4 * var(--ls-u));
+  border-radius: calc(0.9 * var(--ls-u));
   object-fit: cover;
-  box-shadow: 0 0.8vh 2.4vh rgba(0, 0, 0, 0.45), 0 0 0 1px rgba(255, 255, 255, 0.08);
+  box-shadow: 0 calc(0.8 * var(--ls-u)) calc(2.4 * var(--ls-u)) rgba(0, 0, 0, 0.45), 0 0 0 1px rgba(255, 255, 255, 0.08);
 }
 .ls-corner-text { min-width: 0; }
 .ls-corner-title,
@@ -334,10 +351,10 @@
   text-overflow: ellipsis;
   text-shadow: 0 0.05em 0.4em var(--ls-shade);
 }
-.ls-corner-title { font-size: 2.3vh; font-weight: 600; line-height: 1.3; }
+.ls-corner-title { font-size: calc(2.3 * var(--ls-u)); font-weight: 600; line-height: 1.3; }
 .ls-corner-artist {
-  margin-top: 0.3vh;
-  font-size: 1.5vh;
+  margin-top: calc(0.3 * var(--ls-u));
+  font-size: calc(1.5 * var(--ls-u));
   font-weight: 500;
   letter-spacing: 0.16em;
   text-transform: uppercase;
@@ -345,6 +362,12 @@
 }
 .ls-wrap.ls-nocover .ls-hero-cover,
 .ls-wrap.ls-nocover .ls-corner-cover { display: none; }
+/* A cover that comes after the title (the thumbnail event is later) fades in */
+.ls-hero-cover,
+.ls-corner-cover { animation: ls-fade 0.6s ease backwards; }
+@keyframes ls-fade {
+  from { opacity: 0; }
+}
 .ls-hero-artist:empty,
 .ls-corner-artist:empty { display: none; }
 
@@ -357,7 +380,7 @@
   top: 6vh;
   max-width: 70vw;
   font-family: var(--ls-ui);
-  font-size: min(1.9vh, 1.7vw);
+  font-size: calc(1.9 * var(--ls-u));
   font-weight: 400;
   letter-spacing: 0.02em;
   line-height: 1.35;
@@ -369,8 +392,13 @@
 }
 .ls-status[data-at="center"] {
   top: 50%;
-  font-size: min(2.4vh, 2.1vw);
+  font-size: calc(2.4 * var(--ls-u));
   transform: translate(-50%, -50%);
+}
+.ls-wrap[data-pos="left"] .ls-status[data-at="top"] {
+  left: 7vw;
+  text-align: left;
+  transform: none;
 }
 .ls-status.ls-on { opacity: 0.75; }
 

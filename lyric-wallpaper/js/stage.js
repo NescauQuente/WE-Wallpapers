@@ -16,14 +16,18 @@
  * and shrink to fit. Each line takes its direction from its text
  * (dir="auto"), so Arabic and Hebrew lyrics read right to left.
  *
- * The song card is big in the middle at the start of a song (and while there
- * are no lyrics to show), then small in the bottom left corner.
+ * The song card is big in the middle for the first seconds of a song (and
+ * while there are no lyrics to show), then small in the bottom left corner.
+ * It makes way early when the singing starts sooner (or is already under way
+ * when the show comes in): the lyrics are never hidden behind it.
+ *
+ * API: init(root), apply(cfg), update(dt, s), state() (for tests).
  */
 (function (S) {
   'use strict';
 
   var CARD_TIME = 5;        // s: the big song card at the start of a song
-  var CARD_LEAD = 0.8;      // s: it makes way this long before the first line
+  var CARD_LEAD = 1.2;      // s: it makes way this long before the first line
   var GAP_MIN = 6;          // s: a pause this long after a line is sung shows "♪ ♪ ♪"
   var HOLD = 1.5;           // s: a sung line stays this long before the pause takes over
   var INTRO_MIN = 3;        // s: an intro (or an empty line) this long shows "♪ ♪ ♪"
@@ -33,8 +37,11 @@
   var ESTIMATED_AFTER = 4;  // s: no position reported this long → say timing is estimated
   var NO_MEDIA_AFTER = 3;   // s: no song info this long → say how to turn it on
   var OUT_TIME = 0.9;       // s: a line that left is recycled after its transition
+  var POOL_MAX = 9;         // line elements; past this a fast seek reuses the oldest leaving one
   var MAX_ROWS = 2;
-  var MIN_FIT = 0.4;        // the smallest a long line shrinks to
+  var MIN_PX = 2.6;         // a long line shrinks down to about this, in --ls-u (1 % of the height)…
+  var MIN_FIT = 0.2;        // …but always may to this share of its size (a big size setting)…
+  var MAX_MIN_FIT = 0.5;    // …and always may to half of it (a small size setting)
   var SIDE = 0.6;           // scale of the previous and next lines…
   var SIDE_REL = 0.8;       // …and never more than this of the current one (a shrunk long line)
   var PULSE = 0.02;         // the bass pulse of the current line (2 %)
@@ -54,13 +61,18 @@
   };
 
   // Chinese and Japanese have no spaces: each character is a "word"
-  var SPLIT = /[぀-ヿ㐀-䶿一-鿿豈-﫿]\s*|[^\s぀-ヿ㐀-䶿一-鿿豈-﫿]+\s*/g;
+  var SPLIT = /[\u3040-\u30ff\u3400-\u4dbf\u4e00-\u9fff\uf900-\ufaff]\s*|[^\s\u3040-\u30ff\u3400-\u4dbf\u4e00-\u9fff\uf900-\ufaff]+\s*/g;
+  // Right-to-left letters (Hebrew, Arabic…): the words of a line with them
+  // stay inline, so the browser orders a mixed line right
+  var BIDI = /[\u0590-\u08ff\ufb1d-\ufdff\ufe70-\ufefc]/;
 
   var cfg = {
     lyricfont: 'segoe', lyricsize: 1, lyricpos: 'center', lyricanim: 'karaoke',
     lyriccontext: true, glowtext: true, songcard: 'corner', showcover: true
   };
   var font = FONTS.segoe;
+  var applied = null;        // what the last apply() set: { key: value, …, lang }
+  var LAYOUT_KEYS = ['lyricfont', 'lyricsize', 'lyricpos', 'lyriccontext', 'lyricanim'];
 
   var root = null, wrap, box, plainBox, plainText, statusEl;
   var hero, heroCover, heroTitle, heroArtist, heroStatus;
@@ -71,15 +83,20 @@
   var now = 0, visible = false, opacity = -1;
   var track, title = '', artist = '', cover = null, cardTime = 0;
   var textColor = null, accentColor = null;
+  var tRGB = [-1, -1, -1], aRGB = [-1, -1, -1];   // the colors set, 0–255
 
-  // Synced lines
+  // Synced lines. tailId/pauseFrom: what shows at the end of each line (its
+  // own id, or the pause under way and when it started), so a pause runs on
+  // across the empty lines after it
   var lines = null, firstText = -1, prevText = null, nextText = null, gapAt = null;
-  var pool = [];             // { el, inEl, tx, fill, span, id, role, gap, line, tok, … }
+  var tailId = null, pauseFrom = null;
+  var pool = [];             // { el, inEl, tx, fill, span, pEl, id, role, gap, line, tok, … }
   var cur = null, prev = null, next = null, curId = NO_ITEM, baseIdx = -1;
   var gapStart = 0, gapEnd = 1;
-  var fontPx = 40, boxW = 800, dirty = true, rebuild = false;
+  var fontPx = 40, boxW = 800, minFit = 0.4, dirty = true, rebuild = false;
   var pulse = 0, pulseSet = 1, coverSet = 1;
   var timingSing = 0;        // second result of timing()
+  var ROLES = ['prev', 'cur', 'next'], slots = [null, null, null], ys = [0, 0, 0], scs = [1, 1, 1];
 
   // Lyrics without timing
   var plain = null, plainEls = [], plainMid = [], plainH = 0, plainView = 0, plainY = NaN, plainHot = -1;
@@ -111,6 +128,7 @@
   // ---------------------------------------------------------------------------
 
   function init(r) {
+    if (wrap) return;        // built once
     root = r || document.getElementById('ls-stage');
     root.setAttribute('aria-hidden', 'true');
     wrap = el('div', 'ls-wrap ls-off', root);
@@ -147,10 +165,22 @@
 
   // c = typed settings: lyricfont, lyricsize, lyricpos, lyricanim,
   // lyriccontext, glowtext, songcard, showcover. Also call it after a
-  // language change (it refreshes the messages)
+  // language change (it refreshes the messages). Only what changed is redone:
+  // main may call it on any setting change, and rebuilding the lines would
+  // restart their animations
   function apply(c) {
     Object.keys(cfg).forEach(function (k) { if (c && c[k] !== undefined) cfg[k] = c[k]; });
+    if (!/^(karaoke|words|fade)$/.test(cfg.lyricanim)) cfg.lyricanim = 'karaoke';
+    if (!/^(center|lower|left)$/.test(cfg.lyricpos)) cfg.lyricpos = 'center';
     if (!wrap) return;
+    var lang = S.i18n && S.i18n.lang ? S.i18n.lang() : '', was = applied;
+    applied = { lang: lang };
+    Object.keys(cfg).forEach(function (k) { applied[k] = cfg[k]; });
+    if (!was || was.lang !== lang || was.lyricanim !== cfg.lyricanim) rebuild = true;   // the line contents
+    if (rebuild || LAYOUT_KEYS.some(function (k) { return was[k] !== cfg[k]; })) dirty = true;   // measure again
+    if (!was || was.showcover !== cfg.showcover) cover = null;
+    if (!was || was.lang !== lang) msgKey = null;
+
     font = FONTS[cfg.lyricfont] || FONTS.segoe;
     var st = wrap.style;
     st.setProperty('--ls-font', font.family);
@@ -160,47 +190,72 @@
     st.setProperty('--ls-lh', font.lh);
     st.setProperty('--ls-case', font.upper ? 'uppercase' : 'none');
     st.setProperty('--ls-size', Math.min(2, Math.max(0.5, +cfg.lyricsize || 1)));
-    wrap.dataset.pos = /^(center|lower|left)$/.test(cfg.lyricpos) ? cfg.lyricpos : 'center';
-    wrap.dataset.anim = /^(karaoke|words|fade)$/.test(cfg.lyricanim) ? cfg.lyricanim : 'karaoke';
+    wrap.dataset.pos = cfg.lyricpos;
+    wrap.dataset.anim = cfg.lyricanim;
     wrap.dataset.font = cfg.lyricfont;
     wrap.classList.toggle('ls-ctx', !!cfg.lyriccontext);
     wrap.classList.toggle('ls-glowing', !!cfg.glowtext);
-    rebuild = true;          // the lines again (mode, font, language of the labels)
-    cover = null;            // showcover may have changed
-    msgKey = null;           // the language may have changed
-    dirty = true;
   }
 
-  // CSS colors (or [r, g, b] from 0 to 1) → the color variables
-  function rgbOf(c, fb) {
-    if (Array.isArray(c)) return [c[0] * 255, c[1] * 255, c[2] * 255];
-    if (!cctx || !c) return fb;
-    cctx.fillStyle = '#010203';
-    cctx.fillStyle = String(c);
-    var v = cctx.fillStyle;
-    if (v.charAt(0) === '#') {
-      if (v === '#010203' && c !== '#010203') return fb;
-      return [parseInt(v.substr(1, 2), 16), parseInt(v.substr(3, 2), 16), parseInt(v.substr(5, 2), 16)];
+  // A CSS color (or [r, g, b] from 0 to 1) → out as 0–255 integers; fb when
+  // it cannot be read. Returns true when out changed
+  function rgbInto(c, out, fb) {
+    var r = fb[0], g = fb[1], b = fb[2];
+    if (c && typeof c === 'object' && c.length >= 3) {
+      r = c[0] * 255;
+      g = c[1] * 255;
+      b = c[2] * 255;
+    } else if (c && cctx) {
+      cctx.fillStyle = '#010203';
+      cctx.fillStyle = String(c);
+      var v = cctx.fillStyle, m;
+      if (v.charAt(0) === '#') {
+        if (v !== '#010203' || c === '#010203') {
+          r = parseInt(v.substr(1, 2), 16);
+          g = parseInt(v.substr(3, 2), 16);
+          b = parseInt(v.substr(5, 2), 16);
+        }
+      } else if ((m = v.match(/[\d.]+/g)) && m.length >= 3) {
+        r = +m[0];
+        g = +m[1];
+        b = +m[2];
+      }
     }
-    var m = v.match(/[\d.]+/g);
-    return m && m.length >= 3 ? [+m[0], +m[1], +m[2]] : fb;
+    r = Math.round(Math.min(255, Math.max(0, r)) || 0);
+    g = Math.round(Math.min(255, Math.max(0, g)) || 0);
+    b = Math.round(Math.min(255, Math.max(0, b)) || 0);
+    if (r === out[0] && g === out[1] && b === out[2]) return false;
+    out[0] = r;
+    out[1] = g;
+    out[2] = b;
+    return true;
   }
 
   function rgba(c, a) {
-    return 'rgba(' + Math.round(c[0]) + ', ' + Math.round(c[1]) + ', ' + Math.round(c[2]) + ', ' + a + ')';
+    return 'rgba(' + c[0] + ', ' + c[1] + ', ' + c[2] + ', ' + a + ')';
   }
 
+  var WHITE = [255, 255, 255], ACCENT = [169, 193, 255];
+
+  // The color variables. Strings are compared as they come; arrays (which
+  // main may ease in place) by their values. The variables are only written
+  // when a color really changed: they restyle the whole stage
   function colors(text, accent) {
-    if (text === textColor && accent === accentColor) return;
+    var arrays = typeof text === 'object' || typeof accent === 'object';
+    if (!arrays && text === textColor && accent === accentColor) return;
     textColor = text;
     accentColor = accent;
-    var tc = rgbOf(text, [255, 255, 255]), ac = rgbOf(accent, [169, 193, 255]), st = wrap.style;
-    st.setProperty('--ls-text', rgba(tc, 1));
-    st.setProperty('--ls-dim', rgba(tc, 0.45));
-    st.setProperty('--ls-accent', rgba(ac, 1));
-    st.setProperty('--ls-glow', rgba(ac, 0.5));
-    st.setProperty('--ls-glow-soft', rgba(ac, 0.22));
-    st.setProperty('--ls-halo', rgba(ac, 0.28));
+    var st = wrap.style;
+    if (rgbInto(text, tRGB, WHITE)) {
+      st.setProperty('--ls-text', rgba(tRGB, 1));
+      st.setProperty('--ls-dim', rgba(tRGB, 0.45));
+    }
+    if (rgbInto(accent, aRGB, ACCENT)) {
+      st.setProperty('--ls-accent', rgba(aRGB, 1));
+      st.setProperty('--ls-glow', rgba(aRGB, 0.5));
+      st.setProperty('--ls-glow-soft', rgba(aRGB, 0.22));
+      st.setProperty('--ls-halo', rgba(aRGB, 0.28));
+    }
   }
 
   // ---------------------------------------------------------------------------
@@ -241,13 +296,15 @@
   function setLines(list) {
     lines = list && list.length ? list : null;
     firstText = -1;
-    prevText = nextText = gapAt = null;
+    prevText = nextText = gapAt = tailId = pauseFrom = null;
     clearItems();
     if (!lines) return;
     var n = lines.length, i, last = -1;
     prevText = new Int32Array(n);
     nextText = new Int32Array(n);
     gapAt = new Float64Array(n);
+    tailId = new Int32Array(n);
+    pauseFrom = new Float64Array(n);
     for (i = 0; i < n; i++) {
       prevText[i] = last;
       if (lines[i].text) last = i;
@@ -263,6 +320,22 @@
       if (lines[i].text) last = i;
     }
     firstText = last;
+    // What shows at the end of each line. An empty line goes on with a pause
+    // already under way (the same "♪ ♪ ♪", not a new one), starts one when it
+    // is long, and otherwise keeps the line before
+    var id = firstText >= 0 && lines[firstText].t >= INTRO_MIN ? 1 : NONE, from = 0;
+    for (i = 0; i < n; i++) {
+      var ln = lines[i];
+      if (ln.text) {
+        id = gapAt[i] < ln.end ? 2 * i + 3 : 2 * i + 2;
+        from = gapAt[i];
+      } else if (!(id & 1) && (i === n - 1 || ln.end - ln.t >= INTRO_MIN)) {
+        id = 2 * i + 3;
+        from = ln.t;
+      }
+      tailId[i] = id;
+      pauseFrom[i] = from;
+    }
   }
 
   // The index of the line being sung at pos (−1 before the first)
@@ -293,29 +366,29 @@
       }
       return NONE;
     }
-    var ln = lines[i];
+    var ln = lines[i], id;
     var songEnd = duration > ln.end ? duration : ln.end + 60;
-    if (!ln.text) {
-      // An empty line marks a pause; a short one keeps the line before
-      if (i === n - 1 || ln.end - ln.t >= INTRO_MIN) {
-        gapStart = ln.t;
-        gapEnd = i === n - 1 ? songEnd : ln.end;
-        return 2 * i + 3;
+    if (ln.text) {
+      if (pos < gapAt[i]) {
+        // After the last line: the outro
+        if (i === n - 1 && pos >= ln.end && (duration <= 0 || duration - ln.end >= OUTRO_MIN)) {
+          gapStart = ln.end;
+          gapEnd = songEnd;
+          return 2 * i + 3;
+        }
+        return 2 * i + 2;
       }
-      return prevText[i] >= 0 ? 2 * prevText[i] + 2 : NONE;
-    }
-    if (pos >= gapAt[i]) {
+      id = 2 * i + 3;
       gapStart = gapAt[i];
-      gapEnd = ln.end;
-      return 2 * i + 3;
+    } else {
+      // An empty line: the pause under way, or the line before (see setLines)
+      id = tailId[i];
+      if (!(id & 1)) return id;
+      gapStart = pauseFrom[i];
     }
-    // After the last line: the outro
-    if (i === n - 1 && pos >= ln.end && (duration <= 0 || duration - ln.end >= OUTRO_MIN)) {
-      gapStart = ln.end;
-      gapEnd = songEnd;
-      return 2 * i + 3;
-    }
-    return 2 * i + 2;
+    // A pause lasts until the next sung line (across empty ones)
+    gapEnd = nextText[i] >= 0 ? lines[nextText[i]].t : songEnd;
+    return id;
   }
 
   // ---------------------------------------------------------------------------
@@ -324,8 +397,8 @@
 
   function makeRec() {
     var r = {
-      el: el('div', 'ls-line', box), inEl: null, tx: null, fill: null, span: null,
-      id: NO_ITEM, role: '', gap: false, rtl: false, line: null, tok: null, total: 0, endT: 0,
+      el: el('div', 'ls-line', box), inEl: null, tx: null, fill: null, span: null, pEl: null,
+      id: NO_ITEM, role: '', gap: false, rtl: false, bidi: false, line: null, tok: null, total: 0, endT: 0,
       h: 0, fit: 1, y: 0, sc: 1, p: -1, lit: -1, outAt: 0, fresh: false
     };
     r.el.dir = 'auto';
@@ -346,9 +419,16 @@
   // The element that shows item id (an existing one, or a free one filled)
   function take(id) {
     if (id === NO_ITEM || id === NONE) return null;
-    var r = findRec(id);
+    var r = findRec(id), i;
     if (r) return r;
-    for (var i = 0; i < pool.length && !r; i++) if (!pool[i].role) r = pool[i];
+    for (i = 0; i < pool.length && !r; i++) if (!pool[i].role) r = pool[i];
+    if (!r && pool.length >= POOL_MAX) {
+      // Seeking fast: the line that left first makes room
+      for (i = 0; i < pool.length; i++) {
+        if (pool[i].role === 'out' && (!r || pool[i].outAt < r.outAt)) r = pool[i];
+      }
+      if (r) recycle(r);
+    }
     if (!r) r = makeRec();
     fill(r, id);
     return r;
@@ -383,25 +463,30 @@
     r.p = -1;
     r.lit = -1;
     r.el.hidden = false;
-    r.el.style.removeProperty('--p');
     r.inEl.style.transform = '';
     content(r);
   }
 
-  // Builds the element's content for its item, in the current animation mode
+  // Builds the element's content for its item, in the current animation mode.
+  // The progress (--p) is set on the element that uses it, the karaoke fill
+  // or the notes: a variable on the whole line would restyle all of it
   function content(r) {
     var id = r.id, anim = cfg.lyricanim;
     r.tx.textContent = '';
     r.span.textContent = '';
+    r.tx.style.removeProperty('--p');
+    r.span.style.removeProperty('--p');
     r.tok = null;
+    r.bidi = false;
     r.gap = id === WHOLE || (id & 1) === 1;
+    r.pEl = r.gap ? r.tx : r.span;
     if (r.gap) {
       r.line = null;
       r.rtl = false;
       var notes = el('div', 'ls-notes', r.tx);
-      for (var k = 0; k < 3; k++) el('span', 'ls-n', notes).textContent = '♪';
+      for (var k = 0; k < 3; k++) el('span', 'ls-n', notes).textContent = '\u266a';
       el('div', 'ls-gap-label', r.tx).textContent = id === WHOLE ? t('lyrics.instrumental') : '';
-      if (id === WHOLE) r.el.style.setProperty('--p', '1');
+      if (id === WHOLE) r.tx.style.setProperty('--p', '1');
     } else {
       var line = r.line = lines[(id - 2) / 2];
       tokens(r, line);
@@ -417,6 +502,7 @@
       }
       if (anim === 'karaoke') r.span.textContent = line.text;
       r.rtl = getComputedStyle(r.el).direction === 'rtl';
+      r.bidi = BIDI.test(line.text);
     }
     r.el.className = roleClass(r);
     measure(r);
@@ -431,12 +517,12 @@
       r.el.classList.add('ls-measure');
       var w = r.tx.offsetWidth;
       r.el.classList.remove('ls-measure');
-      fit = Math.max(MIN_FIT, Math.min(1, boxW * MAX_ROWS * 0.86 / Math.max(1, w)));
-      for (var k = 0; k < 5; k++) {
+      fit = Math.max(minFit, Math.min(1, boxW * MAX_ROWS * 0.86 / Math.max(1, w)));
+      for (var k = 0; k < 6; k++) {
         st.setProperty('--fit', fit.toFixed(3));
         h = r.inEl.offsetHeight;
-        if (h <= lh * fit * (MAX_ROWS + 0.4) || fit <= MIN_FIT) break;
-        fit = Math.max(MIN_FIT, fit * 0.92);
+        if (h <= lh * fit * (MAX_ROWS + 0.4) || fit <= minFit) break;
+        fit = Math.max(minFit, fit * 0.92);
       }
     }
     r.h = h;
@@ -444,7 +530,7 @@
   }
 
   function baseClass(r) {
-    return 'ls-line' + (r.gap ? ' ls-gap' : '') + (r.rtl ? ' ls-rtl' : '');
+    return 'ls-line' + (r.gap ? ' ls-gap' : '') + (r.rtl ? ' ls-rtl' : '') + (r.bidi ? ' ls-bidi' : '');
   }
 
   function roleClass(r) {
@@ -457,13 +543,14 @@
     r.el.style.transform = 'translate(0, ' + y.toFixed(1) + 'px) scale(' + sc + ')';
   }
 
-  // Leaves: up (or down after a seek back) and fades; a pause shrinks away
+  // Leaves: up (or down after a seek back) and fades; a pause fades quickly
+  // where it is (the next line comes up through its place)
   function leave(r, back) {
     r.role = 'out';
     r.outAt = now;
     r.fresh = false;
     r.el.className = roleClass(r);
-    if (r.gap) place(r, r.y + r.h * r.sc * 0.2, r.sc * 0.6);
+    if (r.gap) place(r, r.y - fontPx * 0.25, r.sc * 0.8);
     else if (cfg.lyriccontext) place(r, back ? r.y + fontPx * 1.6 : r.y - r.h * r.sc - fontPx * 0.5, r.sc * 0.9);
     else place(r, r.y + (back ? 1 : -1) * fontPx * 0.8, r.sc * 0.96);
   }
@@ -483,10 +570,15 @@
   // Places the previous, current and next items around the anchor; new ones
   // come in from below (from above after a seek back)
   function layout(back) {
-    var g = fontPx * 0.42, ctx = cfg.lyriccontext;
-    var hc = cur ? cur.h : fontPx * font.lh, y0 = -hc / 2, fresh = false;
-    var list = [prev, cur, next], ys = [0, y0, 0], scs = [0.94, 1, 0.94];
-    var roles = ['prev', 'cur', 'next'], fc = cur ? cur.fit : 1;
+    var g = fontPx * 0.42, ctx = cfg.lyriccontext, i, r;
+    var hc = cur ? cur.h : fontPx * font.lh, y0 = -hc / 2, fresh = false, fc = cur ? cur.fit : 1;
+    slots[0] = prev;
+    slots[1] = cur;
+    slots[2] = next;
+    ys[0] = ys[2] = 0;
+    ys[1] = y0;
+    scs[0] = scs[2] = 0.94;
+    scs[1] = 1;
     if (prev) {
       if (ctx) scs[0] = Math.min(SIDE, SIDE_REL * fc / prev.fit);
       ys[0] = ctx ? y0 - g - prev.h * scs[0] : -prev.h / 2 - fontPx * 0.8;
@@ -495,10 +587,10 @@
       if (ctx) scs[2] = Math.min(SIDE, SIDE_REL * fc / next.fit);
       ys[2] = ctx ? y0 + hc + g : -next.h / 2 + fontPx * 0.8;
     }
-    for (var i = 0; i < 3; i++) {
-      var r = list[i];
+    for (i = 0; i < 3; i++) {
+      r = slots[i];
       if (!r) continue;
-      r.role = roles[i];
+      r.role = ROLES[i];
       if (r.fresh) {
         // Starting point, without a transition
         r.el.style.transition = 'none';
@@ -513,7 +605,7 @@
     if (!fresh) return;
     void box.offsetWidth;
     for (i = 0; i < 3; i++) {
-      r = list[i];
+      r = slots[i];
       if (!r || !r.fresh) continue;
       r.fresh = false;
       r.el.style.transition = '';
@@ -555,12 +647,14 @@
     layout(back);
   }
 
-  // Every line leaves (new lyrics, or none)
+  // Every line leaves (new lyrics, or none). Their ids are dropped: the same
+  // id in the new lyrics is another line
   function clearItems() {
     for (var i = 0; i < pool.length; i++) {
       var r = pool[i];
       if (r.role === 'new') recycle(r);
       else if (r.role && r.role !== 'out') leave(r, false);
+      r.id = NO_ITEM;
     }
     cur = prev = next = null;
     curId = NO_ITEM;
@@ -593,7 +687,7 @@
     }
     if (Math.abs(p - r.p) < 0.0015 && !(p === 1 && r.p !== 1)) return;
     r.p = p;
-    r.el.style.setProperty('--p', p.toFixed(4));
+    r.pEl.style.setProperty('--p', p.toFixed(4));
   }
 
   // Words mode: the first k words are on, the last of them is the newest
@@ -674,6 +768,10 @@
     dirty = false;
     fontPx = parseFloat(getComputedStyle(box).fontSize) || 40;
     boxW = box.clientWidth || 800;
+    // How far a long line may shrink: to about MIN_PX, kept within
+    // MIN_FIT…MAX_MIN_FIT of the set size
+    var u = Math.min(wrap.clientHeight, wrap.clientWidth * 1.25) / 100 || 9;
+    minFit = Math.min(MAX_MIN_FIT, Math.max(MIN_FIT, MIN_PX * u / fontPx));
     for (var i = 0; i < pool.length; i++) {
       var r = pool[i];
       if (r.role === 'out') recycle(r);
@@ -734,7 +832,9 @@
 
   // The message to show (a key of i18n.js) or ''
   function message(s, on, hasTitle, dt) {
-    if (!hasTitle) {
+    if (hasTitle) {
+      noMedia = 0;
+    } else {
       if (!on && cfg.songcard === 'off') return '';
       noMedia += dt;
       return noMedia >= NO_MEDIA_AFTER && noMedia < NO_MEDIA_AFTER + 10 ? 'show.noMedia' : '';
@@ -746,7 +846,7 @@
       case 'error': return statusAge < MSG_TIME ? 'lyrics.error' : '';
       case 'plain': return statusAge < MSG_TIME + 2 ? 'lyrics.plain' : '';
       case 'synced':
-        return !s.synced && statusAge >= ESTIMATED_AFTER && statusAge < ESTIMATED_AFTER + MSG_TIME ? 'lyrics.estimated' : '';
+        return s.synced === false && statusAge >= ESTIMATED_AFTER && statusAge < ESTIMATED_AFTER + MSG_TIME ? 'lyrics.estimated' : '';
     }
     return '';
   }

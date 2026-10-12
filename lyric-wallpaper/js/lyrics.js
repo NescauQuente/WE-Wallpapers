@@ -13,9 +13,10 @@
  *   2. /api/search by title and artist — the best result (below);
  *   3. /api/search with free text, then by title and artist for the other
  *      readings of the title (e.g. the original one).
- * It stops at the first timed lyrics; untimed (plain) ones are only used when
- * no timed ones turn up. The best result: timed and within 3 s of the song's
- * duration (the same recording), then any timed, then plain.
+ * It stops at the first timed lyrics, or when the service cannot be reached;
+ * untimed (plain) ones are only used when no timed ones turn up. The best
+ * result: timed and within 3 s of the song's duration (the same recording),
+ * then any timed, then plain.
  */
 (function (S) {
   'use strict';
@@ -214,6 +215,10 @@
   var VERSION_END = /(?:^|\s)(?:version|versão|versión|edit|mix|remaster(?:ed)?|edition)(?:\s+(?:19|20)\d\d)?$/i;
   var DASH = /^(.+?)\s+[-–—]\s+(.+)$/;
   var TAIL = /\s+[-–—]\s+([^-–—]+)$/;
+  // "Song feat. Someone", up to a " - " that may follow ("Artist feat. X - Song")
+  var FEAT = /\s+(?:feat\.?|ft\.|featuring)\s.*?(?=\s+[-–—]\s|$)/i;
+  // A browser tab's title: "(2) Artist - Song - YouTube"
+  var SITE = /\s+[-–—]\s+YouTube(?:\s+Music)?$/i;
 
   function tidy(s) {
     return s.replace(/\s+/g, ' ').replace(/^[\s\-–—|:]+|[\s\-–—|:]+$/g, '');
@@ -232,14 +237,15 @@
   }
 
   function cleanTrack(t, artist) {
+    if (SITE.test(t)) t = t.replace(SITE, '').replace(/^\(\d+\)\s+/, '');
     for (var pass = 0; pass < 2; pass++) {
       t = t.replace(GROUP, function (all, inner) {
         return NOISE.test(inner) || CREDIT.test(inner.trim()) ? '' : all;
       });
     }
     t = t.replace(/\s*(?:\||｜|\/\/).*$/, '');                     // "Song | Official Video"
-    t = t.replace(/\s+(?:feat\.?|ft\.|featuring)\s.*$/i, '');      // "Song feat. Someone"
-    // "Song - Remastered 2011" (but not "Artist - Live Forever": what is left
+    t = t.replace(FEAT, '');
+    // "Song - Remastered 2011" (but not "Artist - Live Wire Song": what is left
     // must not be just the artist)
     var m, ar = norm(artist);
     while ((m = TAIL.exec(t)) && (VERSION_HEAD.test(m[1]) || VERSION_END.test(m[1])) &&
@@ -252,9 +258,10 @@
     return w ? tidy(w[1]) : t;
   }
 
-  // The title and artist the player reports → { track, artist, variants }.
+  // The title and artist the player reports → { track, artist, variants, query }.
   // variants: every reading worth looking up, the best first ({ track, artist },
-  // the same as the result's), the original title and artist last.
+  // the same as the result's), the original title and artist last. query:
+  // the words for the free-text search.
   function cleanTitle(title, artist) {
     title = tidy(String(title || ''));
     artist = tidy(String(artist || ''));
@@ -272,7 +279,7 @@
     var channel = vevo || /(?:official|oficial|music|records|tv|channel)$/i.test(a);
 
     var t = cleanTrack(title, a) || title;
-    var best = { track: t, artist: a || artist }, extra = [];
+    var best = { track: t, artist: a || artist }, extra = [], query = '';
     // YouTube: "Artist - Song" uploaded by the artist's channel. Otherwise
     // both readings are kept for later: "Song - Something" by the artist, and
     // "Artist - Song" uploaded by someone else.
@@ -284,10 +291,12 @@
       } else {
         extra.push({ track: tidy(m[1]), artist: best.artist });
         extra.push(split);
+        // Uploaded by someone else: the title holds both the artist and the song
+        query = t;
       }
     }
     // Several artists: also the first one alone
-    var first = /^(.+?)\s*(?:,|;|\s\/\s|\s&\s)\s*.+$/.exec(best.artist);
+    var first = /^(.+?)\s*(?:,|;|\s\/\s|\s&\s|\s[x×]\s)\s*.+$/i.exec(best.artist);
     if (first) extra.push({ track: best.track, artist: tidy(first[1]) });
     extra.push({ track: title, artist: artist });
 
@@ -300,7 +309,10 @@
         variants.push(v);
       }
     });
-    return { track: best.track, artist: best.artist, variants: variants };
+    if (!query) query = best.track + (best.artist ? ' ' + best.artist : '');
+    // Words only: the service reads some signs as search operators
+    query = tidy(query.replace(/[\-–—|\/\\()\[\]{}【】"“”„«»:;!?*^+~<>=#$%&,.]+/g, ' '));
+    return { track: best.track, artist: best.artist, variants: variants, query: query };
   }
 
   function keyOf(v) {
@@ -368,26 +380,37 @@
     return r;
   }
 
+  // The first name of "A, B", "A & B", "A feat. B"…
+  var FIRST = /^(.+?)\s*(?:,|;|\s\/\s|\s&\s|\s[x×]\s|\s(?:feat\.?|ft\.?|featuring|with)\s).*$/i;
+
   function artistFits(item, v) {
     var y = norm(v.artist);
-    return !y || near(norm(item.artistName), y);
+    if (!y) return true;
+    var x = norm(item.artistName);
+    if (near(x, y)) return true;
+    var fx = FIRST.exec(String(item.artistName || '')), fy = FIRST.exec(v.artist);
+    return near(norm(fx ? fx[1] : item.artistName), norm(fy ? fy[1] : v.artist));
   }
 
   // How good a search result is for the reading v of the song (0 = not it):
   // 6 timed and the same duration, 5 timed, 4 plain and the same duration,
-  // 3 instrumental and the same duration, 2 plain
-  function score(item, v, dur, free) {
+  // 3 instrumental and the same duration, 2 plain; half a point more when
+  // the title is exactly ours. Both titles are cleaned up first ("Song
+  // (Remastered)" is "Song"); a longer or shorter title ("Kite" and "Kite
+  // Story"), or another artist, only counts with the same duration.
+  function score(item, v, dur) {
     if (!item || typeof item !== 'object') return 0;
-    var a = norm(item.trackName), b = norm(v.track);
+    var their = String(item.trackName || ''), a = norm(cleanTrack(their, String(item.artistName || '')) || their);
+    var b = norm(cleanTrack(v.track, v.artist) || v.track);
     if (!a || !b) return 0;
-    // Their title holds ours ("Song (Remastered)"), or ours holds theirs and the artist matches
-    if (a !== b && a.indexOf(b) < 0 && !(b.indexOf(a) >= 0 && artistFits(item, v))) return 0;
-    var same = dur > 0 && isFinite(+item.duration) && Math.abs(+item.duration - dur) <= NEAR;
-    // Free-text search: also the artist, or at least the duration
-    if (free && !same && !artistFits(item, v)) return 0;
-    if (hasText(item.syncedLyrics)) return same ? 6 : 5;
-    if (hasText(item.plainLyrics)) return same ? 4 : 2;
-    return item.instrumental && same ? 3 : 0;
+    var same = dur > 0 && item.duration != null && isFinite(+item.duration) && Math.abs(+item.duration - dur) <= NEAR;
+    var exact = a === b;
+    if (!exact && !(same && (a.indexOf(b) >= 0 || b.indexOf(a) >= 0))) return 0;
+    if (!same && !artistFits(item, v)) return 0;
+    var bonus = exact ? 0.5 : 0;
+    if (hasText(item.syncedLyrics)) return (same ? 6 : 5) + bonus;
+    if (hasText(item.plainLyrics)) return (same ? 4 : 2) + bonus;
+    return item.instrumental && same ? 3 + bonus : 0;
   }
 
   // Keeps the best untimed find; returns the result when it is timed
@@ -415,16 +438,16 @@
     if (!Array.isArray(list)) return null;
     var best = null, bestS = 0, bestD = Infinity;
     for (var i = 0; i < list.length; i++) {
-      var s = score(list[i], st.v, j.dur, st.free);
+      var s = score(list[i], st.v, j.dur);
       if (!s || s < bestS) continue;
-      var d = j.dur > 0 && isFinite(+list[i].duration) ? Math.abs(+list[i].duration - j.dur) : Infinity;
+      var d = j.dur > 0 && list[i].duration != null && isFinite(+list[i].duration) ? Math.abs(+list[i].duration - j.dur) : Infinity;
       if (s > bestS || d < bestD) {
         best = list[i];
         bestS = s;
         bestD = d;
       }
     }
-    return consider(j, best, bestS, st.source);
+    return consider(j, best, Math.floor(bestS), st.source);
   }
 
   // ---------------------------------------------------------------------------
@@ -433,6 +456,8 @@
   var CANCELLED = { kind: 'cancelled' };
   var FAILED = { kind: 'error' };
   var NOTFOUND = { kind: 'notfound' };
+  var TIMEOUT = { kind: 'timeout' };
+  var OFFLINE = { kind: 'offline' };
 
   var useHeader = true;           // false once the header turned out to be refused (CORS)
   var chain = Promise.resolve();  // the request in flight (never rejects)
@@ -448,9 +473,10 @@
     return Math.min(api.maxRetryWait, Math.max(0, s));
   }
 
-  // One fetch → ok (with the JSON), notfound, busy (429/503, with the wait),
+  // One fetch → ok (with the JSON), notfound (404, or another answer that
+  // the request was not right: 400, 410, 422), busy (429/503, with the wait),
   // cors (a TypeError: the request was refused or the network is down),
-  // error or cancelled
+  // timeout, error or cancelled
   function attempt(j, url, header, mayWait) {
     return new Promise(function (resolve) {
       if (j.dead) return resolve(CANCELLED);
@@ -460,7 +486,7 @@
       var done = false;
       var timer = setTimeout(function () {
         if (ctrl) ctrl.abort();
-        end(FAILED);
+        end(TIMEOUT);
       }, api.timeoutMs);
       function end(r) {
         if (done) return;
@@ -481,8 +507,9 @@
       try { p = fetchFn(url, opts); } catch (e) { p = Promise.reject(e); }
       Promise.resolve(p).then(function (res) {
         if (done) return;
-        if (res.status === 404) return end(NOTFOUND);
-        if ((res.status === 429 || res.status === 503) && mayWait) return end({ kind: 'busy', wait: retryAfter(res) });
+        var code = res.status;
+        if (code === 404 || code === 400 || code === 410 || code === 422) return end(NOTFOUND);
+        if ((code === 429 || code === 503) && mayWait) return end({ kind: 'busy', wait: retryAfter(res) });
         if (!res.ok) return end(FAILED);
         return res.json().then(function (data) { end({ kind: 'ok', data: data }); });
       }, function (err) {
@@ -507,13 +534,13 @@
 
   // A request with its retries: once without the header when the fetch
   // throws (the header needs a CORS preflight), once after Retry-After when
-  // the service is busy
+  // the service is busy. Throwing without the header too: offline.
   function requestOnce(j, url) {
     var triedBare = false, waited = false;
     function go(header) {
       return attempt(j, url, header, !waited).then(function (r) {
         if (r.kind === 'cors') {
-          if (!header || triedBare || j.dead) return j.dead ? CANCELLED : FAILED;
+          if (!header || triedBare || j.dead) return j.dead ? CANCELLED : OFFLINE;
           triedBare = true;
           return go(false).then(function (r2) {
             if (r2.kind === 'ok' || r2.kind === 'notfound') useHeader = false;
@@ -560,8 +587,7 @@
     state.key = key;
   }
 
-  function qs(v, free) {
-    if (free) return 'search?q=' + encodeURIComponent(v.track + (v.artist ? ' ' + v.artist : ''));
+  function qs(v) {
     return 'search?track_name=' + encodeURIComponent(v.track) +
       (v.artist ? '&artist_name=' + encodeURIComponent(v.artist) : '');
   }
@@ -580,9 +606,9 @@
           (j.dur > 0 ? '&duration=' + Math.round(j.dur) : '')
       });
     }
-    add({ v: v, source: 'search', url: API + qs(v, false) });
-    add({ v: v, free: true, source: 'q', url: API + qs(v, true) });
-    for (var i = 1; i < vs.length && i <= VARIANTS; i++) add({ v: vs[i], source: 'search', url: API + qs(vs[i], false) });
+    add({ v: v, source: 'search', url: API + qs(v) });
+    if (j.c.query) add({ v: v, source: 'q', url: API + 'search?q=' + encodeURIComponent(j.c.query) });
+    for (var i = 1; i < vs.length && i <= VARIANTS; i++) add({ v: vs[i], source: 'search', url: API + qs(vs[i]) });
     return steps;
   }
 
@@ -610,8 +636,11 @@
       var st = steps[i++];
       request(j, st.url).then(function (res) {
         if (j.dead) return;
-        if (res.kind === 'error') j.errored = true;
-        else if (res.kind === 'ok') {
+        if (res.kind === 'error' || res.kind === 'timeout' || res.kind === 'offline') {
+          j.errored = true;
+          // The service cannot be reached: the next requests would fail too
+          if (res.kind === 'offline' || (res.kind === 'timeout' && ++j.timeouts >= 2)) i = steps.length;
+        } else if (res.kind === 'ok') {
           var found = st.get ? fromGet(j, res.data) : fromSearch(j, res.data, st);
           if (found) {
             finish(j, found, true);
@@ -651,7 +680,7 @@
     cancelJob();
     var j = job = {
       key: key, c: c, dur: dur, cb: cb, dead: false,
-      timer: 0, abort: null, best: null, errored: false
+      timer: 0, abort: null, best: null, errored: false, timeouts: 0
     };
     var known = c.track ? cacheGet(key) : empty('notfound');
     if (known) {

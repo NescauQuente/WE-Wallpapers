@@ -20,8 +20,10 @@ const TYPES = {
 };
 
 const server = http.createServer((req, res) => {
-  const file = path.join(ROOT, decodeURIComponent(new URL(req.url, 'http://x').pathname));
-  if (!file.startsWith(ROOT) || !fs.existsSync(file) || !fs.statSync(file).isFile()) {
+  let file = '';
+  // A malformed %-escape would throw here and stop the whole run: answer 404
+  try { file = path.join(ROOT, decodeURIComponent(new URL(req.url, 'http://x').pathname)); } catch (e) { /* 404 */ }
+  if (!file || !file.startsWith(ROOT) || !fs.existsSync(file) || !fs.statSync(file).isFile()) {
     res.writeHead(404).end();
     return;
   }
