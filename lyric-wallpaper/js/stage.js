@@ -835,7 +835,9 @@
     if (hasTitle) {
       noMedia = 0;
     } else {
-      if (!on && cfg.songcard === 'off') return '';
+      // Only when Wallpaper Engine's media integration is off: a show of
+      // sound alone (a music bot…) with it on needs no advice
+      if (!s.mediaOff || (!on && cfg.songcard === 'off')) return '';
       noMedia += dt;
       return noMedia >= NO_MEDIA_AFTER && noMedia < NO_MEDIA_AFTER + 10 ? 'show.noMedia' : '';
     }

@@ -26,6 +26,8 @@
 
   var IDLE = { win11: 0, win11dark: 1, win10: 2, image: 3 };
   var STYLE = { aurora: 0, spotlights: 1, cover: 2, minimal: 3 };
+  var VIZ = { off: 0, bars: 1, wave: 2, ring: 3 };
+  var VIZ_N = 32;     // visualizer bands (p.bands: a Float32Array of this length, 0–1)
 
   // Ribbons of the 'win11' looks, back to front, in screen units (height = 1,
   // x from about -0.9 to 0.9, y up). Each one: center line
@@ -70,6 +72,8 @@
     'uniform sampler2D u_cover;',
     'uniform vec2 u_coverSize;',
     'uniform vec4 u_rib[' + (RIB_N * 4) + '];',
+    'uniform vec4 u_viz;',          // visualizer: style (0 off, 1 bars, 2 wave, 3 ring), size
+    'uniform float u_bands[' + VIZ_N + '];',
     'out vec4 o;',
     '',
     'float px;',                   // one pixel in screen units
@@ -356,6 +360,50 @@
     // Soft roll-off of the highlights
     'float knee(float c) { return c < 0.8 ? c : 0.8 + 0.2 * (1.0 - exp(-(c - 0.8) * 5.0)); }',
     '',
+    // The audio visualizer: the spectrum (bass → treble) in the album colors,
+    // added as light over the show
+    'float band(float u) {',
+    '  float f = clamp(u, 0.0, 1.0) * ' + (VIZ_N - 1) + '.0;',
+    '  int i = int(f);',
+    '  int j = min(i + 1, ' + (VIZ_N - 1) + ');',
+    '  return mix(u_bands[i], u_bands[j], smoothstep(0.0, 1.0, f - float(i)));',
+    '}',
+    '',
+    'vec3 visualizer(vec2 q, float asp) {',
+    '  float k = u_viz.y;',
+    '  if (u_viz.x < 2.5) {',
+    // Along the bottom, across the middle of the screen (clear of the corner card)
+    '    float w = asp * 0.56, u = (q.x + w * 0.5) / w;',
+    '    if (u < -0.02 || u > 1.02) return vec3(0.0);',
+    '    float y = q.y + 0.47;',
+    '    if (y > 0.2 * k + 0.08) return vec3(0.0);',
+    '    vec3 col = mix(u_colA, u_colB, clamp(u, 0.0, 1.0));',
+    '    if (u_viz.x < 1.5) {',
+    '      float f = u * ' + VIZ_N + '.0, cell = fract(f);',
+    '      float h = 0.006 + 0.16 * k * u_bands[int(clamp(floor(f), 0.0, ' + (VIZ_N - 1) + '.0))];',
+    '      float side = smoothstep(0.08, 0.16, cell) * (1.0 - smoothstep(0.84, 0.92, cell));',
+    '      float body = side * step(0.0, y) * (1.0 - smoothstep(h - 0.002, h + 0.002, y));',
+    '      float glow = side * exp(-max(y - h, 0.0) / 0.012) * step(0.0, y) * 0.5;',
+    '      float edge = step(0.0, u) * step(u, 1.0);',
+    '      return col * (body * mix(0.55, 1.0, y / max(h, 0.001)) + glow) * edge * 0.85;',
+    '    }',
+    '    float h = 0.012 + 0.14 * k * band(u);',
+    '    float d = abs(y - h);',
+    '    float fade = smoothstep(-0.02, 0.06, u) * (1.0 - smoothstep(0.94, 1.02, u));',
+    '    return col * (exp(-d * d / 0.000012) + 0.35 * exp(-d / 0.02)) * fade * 0.9;',
+    '  }',
+    // A ring around the center: left and right mirror each other
+    '  float r = length(q), a = atan(q.x, q.y);',
+    '  float u = abs(a) / 3.14159265;',
+    '  float r0 = 0.27, h = 0.10 * k * band(u);',
+    '  float d = r - r0;',
+    '  if (d < -0.02 || d > h + 0.08) return vec3(0.0);',
+    '  vec3 col = mix(u_colA, u_colB, u);',
+    '  float fill = step(0.0, d) * (1.0 - smoothstep(h - 0.003, h + 0.003, d));',
+    '  float rim = exp(-d * d / 0.000006);',
+    '  return col * (fill * 0.35 + rim * 0.6 + 0.25 * exp(-abs(d - h) / 0.01));',
+    '}',
+    '',
     'void main() {',
     '  px = 1.0 / u_res.y;',
     '  vec2 q = (gl_FragCoord.xy - 0.5 * u_res) * px;',
@@ -372,6 +420,7 @@
     '  }',
     '  if (s > 0.001) {',
     '    show = showColor(q * (1.0 + 0.10 * (1.0 - s)), asp);',
+    '    if (u_viz.x > 0.5) show += visualizer(q, asp) * smoothstep(0.5, 1.0, s);',
     '    show = vec3(knee(show.r), knee(show.g), knee(show.b));',
     '  }',
     '  vec3 rgb;',
@@ -496,7 +545,7 @@
   }
 
   var UNIFORMS = ['u_res', 'u_time', 'u_itime', 'u_idle', 'u_style', 'u_show', 'u_colA', 'u_colB',
-    'u_base', 'u_audio', 'u_parts', 'u_coverOn', 'u_cover', 'u_coverSize', 'u_rib'];
+    'u_base', 'u_audio', 'u_parts', 'u_coverOn', 'u_cover', 'u_coverSize', 'u_rib', 'u_viz', 'u_bands'];
 
   function compile(type, src) {
     var sh = gl.createShader(type);
@@ -643,6 +692,8 @@
     gl.uniform4f(U.u_audio, (p.bass || 0) * k, p.volume || 0, (p.beat || 0) * k, k);
     gl.uniform1f(U.u_parts, p.particles ? 1 : 0);
     gl.uniform1f(U.u_coverOn, p.hasCover && cover ? 1 : 0);
+    gl.uniform4f(U.u_viz, VIZ[p.viz] || 0, +p.vizSize || 1, 0, 0);
+    if (VIZ[p.viz] && p.bands) gl.uniform1fv(U.u_bands, p.bands);
     gl.activeTexture(gl.TEXTURE0);
     gl.bindTexture(gl.TEXTURE_2D, coverTex);
     gl.bindVertexArray(vao);
@@ -943,6 +994,18 @@
     x.drawImage(c2.vig, 0, 0);
   }
 
+  // The visualizer on Canvas 2D: bars along the bottom whatever the style
+  function viz2(x, p, W, H, alpha) {
+    var n = VIZ_N, w = W * 0.56, x0 = (W - w) / 2, bw = w / n, k = +p.vizSize || 1;
+    x.globalAlpha = 0.8 * alpha;
+    x.fillStyle = 'rgb(' + Math.round(c2.pA[0] * 255) + ',' + Math.round(c2.pA[1] * 255) + ',' + Math.round(c2.pA[2] * 255) + ')';
+    for (var i = 0; i < n; i++) {
+      var h = H * (0.006 + 0.16 * k * p.bands[i]);
+      x.fillRect(x0 + i * bw + bw * 0.12, H * 0.97 - h, bw * 0.76, h);
+    }
+    x.globalAlpha = 1;
+  }
+
   function render2(p) {
     var x = c2.ctx;
     if (!x) return;
@@ -968,6 +1031,7 @@
       return;
     }
     show2(x, p, W, H);
+    if (VIZ[p.viz] && p.bands && s > 0.5) viz2(x, p, W, H, (s - 0.5) * 2);
     if (s >= 0.999) return;
     if (image) {
       // Fade the show itself: the image under the canvas shows through

@@ -246,7 +246,12 @@
   // The song the player reports, '' when none. Once the media integration is
   // turned off its last song is stale: no title, cover or lyrics from it
   function songTitle() {
-    return media.state.enabled ? media.state.title : '';
+    var m = media.state;
+    if (!m.enabled) return '';
+    // A show started by sound alone (a music bot, a game…) while the player's
+    // song is paused: that song is not what plays
+    if (show.source === 'sound' && !m.playing) return '';
+    return m.title;
   }
 
   // The colors to ease to (on a new cover or a settings change)
@@ -387,11 +392,14 @@
     var t = cfg.trigger, m = media.state;
     if (t === 'never') return '';
     if (t === 'always') return 'always';
-    if (t === 'media' || (t === 'auto' && m.enabled && m.title)) return m.enabled && m.playing ? 'media' : '';
-    // Without the audio option there is no sound to go by. Once on, the
-    // silence counts from its very start (not from the end of a dip)
+    var playing = m.enabled && m.playing && !!m.title;
+    if (t === 'media' || (t === 'auto' && playing)) return playing ? 'media' : '';
+    // Sound with no song reported (a music bot, a browser tab…): it starts
+    // after 'soundtime' seconds of it. Without the audio option there is no
+    // sound to go by. Once on, the silence counts from its very start (not
+    // from the end of a dip)
     if (!cfg.audioenabled) return '';
-    return (show.on ? music.silence <= 0 : music.sure) ? 'sound' : '';
+    return (show.on && show.source === 'sound' ? music.silence <= 0 : music.time >= cfg.soundtime) ? 'sound' : '';
   }
 
   function updateShow(dt) {
@@ -399,7 +407,13 @@
     if (src) {
       show.on = true;
       show.off = 0;
-      show.source = src;
+      if (src !== show.source) {
+        // The song shown depends on what started the show (see songTitle)
+        show.source = src;
+        albumColors();
+        applyCover();
+        syncLyrics();
+      }
     } else if (show.on) {
       show.off += dt;
       if (show.off >= cfg.returndelay || cfg.trigger === 'never') {
@@ -524,7 +538,8 @@
   };
   var gp = {     // background frame (reused)
     time: 0, idle: 'win11', idleMotion: false, show: 0, style: 'aurora', colA: live.A, colB: live.B, colBg: live.bg,
-    bass: 0, volume: 0, beat: 0, reactive: 1, particles: true, hasCover: false
+    bass: 0, volume: 0, beat: 0, reactive: 1, particles: true, hasCover: false,
+    viz: 'off', vizSize: 1, bands: new Float32Array(32)
   };
 
   function tick(dt) {
@@ -567,6 +582,7 @@
     ss.lyricsOn = cfg.lyrics;
     ss.track = m.track;
     ss.title = songTitle();
+    ss.mediaOff = isWE && !m.enabled;
     ss.artist = ss.title ? m.artist : '';
     ss.cover = cover.url;
     ss.status = L.status;
@@ -596,6 +612,10 @@
     gp.beat = on ? beat : 0;
     gp.reactive = cfg.reactive && on ? cfg.reactiveamt : 0;
     gp.particles = cfg.particles;
+    // The visualizer: the 64 audio bands, two by two (nothing without audio)
+    gp.viz = on ? cfg.visualizer : 'off';
+    gp.vizSize = cfg.vizsize;
+    for (var vb = 0, AB = A.bands; vb < 32; vb++) gp.bands[vb] = on ? Math.min(1, (AB[vb * 2] + AB[vb * 2 + 1]) * 0.5 * sens) : 0;
     gp.hasCover = !!cover.ready;
     draw();
   }
@@ -990,6 +1010,7 @@
       tick(dt);
     },
     // What shows now
+    gfxParams: function () { return gp; },
     state: function () {
       var L = lyrics.state;
       return {

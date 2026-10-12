@@ -430,6 +430,8 @@
     rest();
     app.setValue('transition', 1);
 
+    // The sound timings below use a short 'soundtime' (the default is 10 s)
+    app.setValue('soundtime', 3.5);
     M.status({ enabled: false });
     check('media integration off', S.media.state.enabled === false && !S.media.state.playing, S.media.state.enabled);
     sound(true);
@@ -642,6 +644,27 @@
     sound(false);
     M.status({ enabled: true });
     app.setValue('trigger', 'auto');
+    rest();
+
+    // Sound with no song reported (a music bot) while the player's song is
+    // paused: the show starts after 'soundtime', without that paused song
+    app.setValue('soundtime', 10);
+    song('Paused Song Test', 'Player Band');
+    play(false);
+    sound(true);
+    run(8);
+    check('auto: 8 s of sound with the song paused is not enough (soundtime 10)', st().mode === 'idle', st());
+    run(2.5);
+    check('auto: after soundtime the sound starts the show', st().on && st().source === 'sound', st());
+    run(D.cfg.transition + 0.2);
+    check('…without the paused song: no card, no lyrics', st().lyrics === 'off' && !ST.state().hero && !ST.state().corner && !ST.state().lyrics, [st(), ST.state()]);
+    check('…and no media integration advice (it is on)', ST.state().message !== 'show.noMedia', ST.state());
+    var vb = D.gfxParams ? D.gfxParams().bands : null;
+    check('visualizer: the spectrum reaches the background', !!vb && vb.length === 32 && Array.prototype.some.call(vb, function (v) { return v > 0.05; }), vb && Array.prototype.slice.call(vb, 0, 8));
+    play(true);
+    D.step(0.1);
+    check('the song playing again takes over', st().source === 'media', st());
+    sound(false);
     play(true);
     fakeMode.offline = false;
 

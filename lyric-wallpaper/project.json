@@ -102,6 +102,7 @@
 				"ui_songcard_corner": "في البداية، ثم في الزاوية",
 				"ui_songcard_off": "إيقاف",
 				"ui_songcard_start": "في بداية الأغنية فقط",
+				"ui_soundtime": "ثوانٍ من الصوت دون أغنية معروفة قبل بدء العرض",
 				"ui_textcolor": "لون نص مخصص",
 				"ui_textmode": "لون النص",
 				"ui_textmode_album": "من غلاف الألبوم",
@@ -113,7 +114,13 @@
 				"ui_trigger_auto": "تلقائي",
 				"ui_trigger_media": "فقط عندما يُبلغ مشغّل عن أغنية",
 				"ui_trigger_never": "أبدًا (إبقاء خلفية الشاشة)",
-				"ui_trigger_sound": "كلما وُجد صوت لبضع ثوانٍ"
+				"ui_trigger_sound": "كلما وُجد صوت لبضع ثوانٍ",
+				"ui_visualizer": "مُصوِّر الصوت",
+				"ui_visualizer_bars": "أعمدة في الأسفل",
+				"ui_visualizer_off": "إيقاف",
+				"ui_visualizer_ring": "حلقة حول المركز",
+				"ui_visualizer_wave": "موجة في الأسفل",
+				"ui_vizsize": "حجم مُصوِّر الصوت"
 			},
 			"be-by": {
 				"ui_audioenabled": "Рэагаваць на гук",
@@ -213,6 +220,7 @@
 				"ui_songcard_corner": "На пачатку, потым у куце",
 				"ui_songcard_off": "Выкл.",
 				"ui_songcard_start": "Толькі на пачатку песні",
+				"ui_soundtime": "Секунды гуку без вядомай песні да пачатку шоу",
 				"ui_textcolor": "Уласны колер тэксту",
 				"ui_textmode": "Колер тэксту",
 				"ui_textmode_album": "З вокладкі альбома",
@@ -224,7 +232,13 @@
 				"ui_trigger_auto": "Аўтаматычна",
 				"ui_trigger_media": "Толькі калі плэер паведамляе пра песню",
 				"ui_trigger_never": "Ніколі (пакінуць шпалеры)",
-				"ui_trigger_sound": "Кожны раз, калі гук гучыць некалькі секунд"
+				"ui_trigger_sound": "Кожны раз, калі гук гучыць некалькі секунд",
+				"ui_visualizer": "Аўдыявізуалізатар",
+				"ui_visualizer_bars": "Слупкі ўнізе",
+				"ui_visualizer_off": "Выкл.",
+				"ui_visualizer_ring": "Кольца вакол цэнтра",
+				"ui_visualizer_wave": "Хваля ўнізе",
+				"ui_vizsize": "Памер візуалізатара"
 			},
 			"bg-bg": {
 				"ui_audioenabled": "Реагиране на звук",
@@ -324,6 +338,7 @@
 				"ui_songcard_corner": "В началото, после в ъгъла",
 				"ui_songcard_off": "Изкл.",
 				"ui_songcard_start": "Само в началото на песента",
+				"ui_soundtime": "Секунди звук без обявена песен преди началото на шоуто",
 				"ui_textcolor": "Персонализиран цвят на текста",
 				"ui_textmode": "Цвят на текста",
 				"ui_textmode_album": "От обложката на албума",
@@ -335,7 +350,13 @@
 				"ui_trigger_auto": "Автоматично",
 				"ui_trigger_media": "Само когато плейър съобщава песен",
 				"ui_trigger_never": "Никога (остава тапетът)",
-				"ui_trigger_sound": "Винаги когато има звук няколко секунди"
+				"ui_trigger_sound": "Винаги когато има звук няколко секунди",
+				"ui_visualizer": "Аудио визуализатор",
+				"ui_visualizer_bars": "Ленти долу",
+				"ui_visualizer_off": "Изкл.",
+				"ui_visualizer_ring": "Пръстен около центъра",
+				"ui_visualizer_wave": "Вълна долу",
+				"ui_vizsize": "Размер на визуализатора"
 			},
 			"cs-cz": {
 				"ui_audioenabled": "Reagovat na zvuk",
@@ -435,6 +456,7 @@
 				"ui_songcard_corner": "Na začátku, pak v rohu",
 				"ui_songcard_off": "Vypnuto",
 				"ui_songcard_start": "Jen na začátku skladby",
+				"ui_soundtime": "Sekundy zvuku bez nahlášené skladby před začátkem show",
 				"ui_textcolor": "Vlastní barva textu",
 				"ui_textmode": "Barva textu",
 				"ui_textmode_album": "Z obalu alba",
@@ -446,7 +468,13 @@
 				"ui_trigger_auto": "Automaticky",
 				"ui_trigger_media": "Jen když přehrávač hlásí skladbu",
 				"ui_trigger_never": "Nikdy (ponechat tapetu)",
-				"ui_trigger_sound": "Kdykoli zní zvuk několik sekund"
+				"ui_trigger_sound": "Kdykoli zní zvuk několik sekund",
+				"ui_visualizer": "Zvukový vizualizér",
+				"ui_visualizer_bars": "Sloupce dole",
+				"ui_visualizer_off": "Vypnuto",
+				"ui_visualizer_ring": "Prstenec kolem středu",
+				"ui_visualizer_wave": "Vlna dole",
+				"ui_vizsize": "Velikost vizualizéru"
 			},
 			"de-de": {
 				"ui_audioenabled": "Auf Audio reagieren",
@@ -546,6 +574,7 @@
 				"ui_songcard_corner": "Am Anfang, dann in einer Ecke",
 				"ui_songcard_off": "Aus",
 				"ui_songcard_start": "Nur am Anfang des Songs",
+				"ui_soundtime": "Sekunden Ton ohne gemeldeten Song, bevor die Show beginnt",
 				"ui_textcolor": "Eigene Textfarbe",
 				"ui_textmode": "Textfarbe",
 				"ui_textmode_album": "Vom Albumcover",
@@ -557,7 +586,13 @@
 				"ui_trigger_auto": "Automatisch",
 				"ui_trigger_media": "Nur wenn ein Player einen Song meldet",
 				"ui_trigger_never": "Nie (Hintergrundbild bleibt)",
-				"ui_trigger_sound": "Sobald einige Sekunden lang Ton läuft"
+				"ui_trigger_sound": "Sobald einige Sekunden lang Ton läuft",
+				"ui_visualizer": "Audio-Visualizer",
+				"ui_visualizer_bars": "Balken unten",
+				"ui_visualizer_off": "Aus",
+				"ui_visualizer_ring": "Ring um die Mitte",
+				"ui_visualizer_wave": "Welle unten",
+				"ui_vizsize": "Größe des Visualizers"
 			},
 			"el-gr": {
 				"ui_audioenabled": "Αντίδραση στον ήχο",
@@ -657,6 +692,7 @@
 				"ui_songcard_corner": "Στην αρχή, μετά σε μια γωνία",
 				"ui_songcard_off": "Ανενεργό",
 				"ui_songcard_start": "Μόνο στην αρχή του τραγουδιού",
+				"ui_soundtime": "Δευτερόλεπτα ήχου χωρίς αναφερόμενο τραγούδι πριν ξεκινήσει το σόου",
 				"ui_textcolor": "Προσαρμοσμένο χρώμα κειμένου",
 				"ui_textmode": "Χρώμα κειμένου",
 				"ui_textmode_album": "Από το εξώφυλλο του άλμπουμ",
@@ -668,7 +704,13 @@
 				"ui_trigger_auto": "Αυτόματα",
 				"ui_trigger_media": "Μόνο όταν ένα πρόγραμμα αναπαραγωγής αναφέρει τραγούδι",
 				"ui_trigger_never": "Ποτέ (μένει η ταπετσαρία)",
-				"ui_trigger_sound": "Όποτε ακούγεται ήχος για λίγα δευτερόλεπτα"
+				"ui_trigger_sound": "Όποτε ακούγεται ήχος για λίγα δευτερόλεπτα",
+				"ui_visualizer": "Οπτικοποιητής ήχου",
+				"ui_visualizer_bars": "Μπάρες κάτω",
+				"ui_visualizer_off": "Ανενεργό",
+				"ui_visualizer_ring": "Δαχτυλίδι γύρω από το κέντρο",
+				"ui_visualizer_wave": "Κύμα κάτω",
+				"ui_vizsize": "Μέγεθος οπτικοποιητή"
 			},
 			"en-us": {
 				"ui_audioenabled": "React to audio",
@@ -768,6 +810,7 @@
 				"ui_songcard_corner": "At the start, then in a corner",
 				"ui_songcard_off": "Off",
 				"ui_songcard_start": "Only at the start of the song",
+				"ui_soundtime": "Seconds of sound with no song reported before the show starts",
 				"ui_textcolor": "Custom text color",
 				"ui_textmode": "Text color",
 				"ui_textmode_album": "From the album cover",
@@ -779,7 +822,13 @@
 				"ui_trigger_auto": "Automatic",
 				"ui_trigger_media": "Only when a player reports a song",
 				"ui_trigger_never": "Never (keep the wallpaper)",
-				"ui_trigger_sound": "Whenever there is sound for a few seconds"
+				"ui_trigger_sound": "Whenever there is sound for a few seconds",
+				"ui_visualizer": "Audio visualizer",
+				"ui_visualizer_bars": "Bars at the bottom",
+				"ui_visualizer_off": "Off",
+				"ui_visualizer_ring": "Ring around the center",
+				"ui_visualizer_wave": "Wave at the bottom",
+				"ui_vizsize": "Visualizer size"
 			},
 			"es-es": {
 				"ui_audioenabled": "Reaccionar al audio",
@@ -879,6 +928,7 @@
 				"ui_songcard_corner": "Al principio, luego en una esquina",
 				"ui_songcard_off": "Desactivado",
 				"ui_songcard_start": "Solo al principio de la canción",
+				"ui_soundtime": "Segundos de sonido sin canción informada antes de que empiece el espectáculo",
 				"ui_textcolor": "Color de texto personalizado",
 				"ui_textmode": "Color del texto",
 				"ui_textmode_album": "De la portada del álbum",
@@ -890,7 +940,13 @@
 				"ui_trigger_auto": "Automático",
 				"ui_trigger_media": "Solo cuando un reproductor indica una canción",
 				"ui_trigger_never": "Nunca (mantener el fondo de pantalla)",
-				"ui_trigger_sound": "Siempre que haya sonido durante unos segundos"
+				"ui_trigger_sound": "Siempre que haya sonido durante unos segundos",
+				"ui_visualizer": "Visualizador de audio",
+				"ui_visualizer_bars": "Barras abajo",
+				"ui_visualizer_off": "Desactivado",
+				"ui_visualizer_ring": "Anillo alrededor del centro",
+				"ui_visualizer_wave": "Onda abajo",
+				"ui_vizsize": "Tamaño del visualizador"
 			},
 			"fr-fr": {
 				"ui_audioenabled": "Réagir à l’audio",
@@ -990,6 +1046,7 @@
 				"ui_songcard_corner": "Au début, puis dans un coin",
 				"ui_songcard_off": "Désactivé",
 				"ui_songcard_start": "Seulement au début du morceau",
+				"ui_soundtime": "Secondes de son sans morceau signalé avant le début du spectacle",
 				"ui_textcolor": "Couleur de texte personnalisée",
 				"ui_textmode": "Couleur du texte",
 				"ui_textmode_album": "D’après la pochette de l’album",
@@ -1001,7 +1058,13 @@
 				"ui_trigger_auto": "Automatique",
 				"ui_trigger_media": "Seulement quand un lecteur signale un morceau",
 				"ui_trigger_never": "Jamais (garder le fond d’écran)",
-				"ui_trigger_sound": "Dès qu’il y a du son pendant quelques secondes"
+				"ui_trigger_sound": "Dès qu’il y a du son pendant quelques secondes",
+				"ui_visualizer": "Visualiseur audio",
+				"ui_visualizer_bars": "Barres en bas",
+				"ui_visualizer_off": "Désactivé",
+				"ui_visualizer_ring": "Anneau autour du centre",
+				"ui_visualizer_wave": "Onde en bas",
+				"ui_vizsize": "Taille du visualiseur"
 			},
 			"hu-hu": {
 				"ui_audioenabled": "Reagálás a hangra",
@@ -1101,6 +1164,7 @@
 				"ui_songcard_corner": "Az elején, aztán egy sarokban",
 				"ui_songcard_off": "Ki",
 				"ui_songcard_start": "Csak a dal elején",
+				"ui_soundtime": "Ennyi másodpercnyi hang kell bejelentett dal nélkül a show indulásához",
 				"ui_textcolor": "Egyéni szövegszín",
 				"ui_textmode": "Szövegszín",
 				"ui_textmode_album": "Az albumborítóról",
@@ -1112,7 +1176,13 @@
 				"ui_trigger_auto": "Automatikus",
 				"ui_trigger_media": "Csak ha egy lejátszó dalt jelez",
 				"ui_trigger_never": "Soha (a háttérkép marad)",
-				"ui_trigger_sound": "Amint néhány másodpercig hang szól"
+				"ui_trigger_sound": "Amint néhány másodpercig hang szól",
+				"ui_visualizer": "Hangvizualizáló",
+				"ui_visualizer_bars": "Oszlopok alul",
+				"ui_visualizer_off": "Ki",
+				"ui_visualizer_ring": "Gyűrű a középpont körül",
+				"ui_visualizer_wave": "Hullám alul",
+				"ui_vizsize": "A vizualizáló mérete"
 			},
 			"id-id": {
 				"ui_audioenabled": "Bereaksi terhadap audio",
@@ -1212,6 +1282,7 @@
 				"ui_songcard_corner": "Di awal, lalu di sudut",
 				"ui_songcard_off": "Mati",
 				"ui_songcard_start": "Hanya di awal lagu",
+				"ui_soundtime": "Detik suara tanpa lagu yang dilaporkan sebelum pertunjukan dimulai",
 				"ui_textcolor": "Warna teks kustom",
 				"ui_textmode": "Warna teks",
 				"ui_textmode_album": "Dari sampul album",
@@ -1223,7 +1294,13 @@
 				"ui_trigger_auto": "Otomatis",
 				"ui_trigger_media": "Hanya saat pemutar melaporkan lagu",
 				"ui_trigger_never": "Tidak pernah (tetap wallpaper)",
-				"ui_trigger_sound": "Setiap kali ada suara selama beberapa detik"
+				"ui_trigger_sound": "Setiap kali ada suara selama beberapa detik",
+				"ui_visualizer": "Visualisasi audio",
+				"ui_visualizer_bars": "Batang di bawah",
+				"ui_visualizer_off": "Mati",
+				"ui_visualizer_ring": "Cincin di sekitar tengah",
+				"ui_visualizer_wave": "Gelombang di bawah",
+				"ui_vizsize": "Ukuran visualisasi"
 			},
 			"it-it": {
 				"ui_audioenabled": "Reagisci all’audio",
@@ -1323,6 +1400,7 @@
 				"ui_songcard_corner": "All’inizio, poi in un angolo",
 				"ui_songcard_off": "Disattivato",
 				"ui_songcard_start": "Solo all’inizio del brano",
+				"ui_soundtime": "Secondi di suono senza brano segnalato prima che inizi lo show",
 				"ui_textcolor": "Colore del testo personalizzato",
 				"ui_textmode": "Colore del testo",
 				"ui_textmode_album": "Dalla copertina dell’album",
@@ -1334,7 +1412,13 @@
 				"ui_trigger_auto": "Automatico",
 				"ui_trigger_media": "Solo quando un lettore segnala un brano",
 				"ui_trigger_never": "Mai (mantieni lo sfondo)",
-				"ui_trigger_sound": "Quando c’è suono per qualche secondo"
+				"ui_trigger_sound": "Quando c’è suono per qualche secondo",
+				"ui_visualizer": "Visualizzatore audio",
+				"ui_visualizer_bars": "Barre in basso",
+				"ui_visualizer_off": "Disattivato",
+				"ui_visualizer_ring": "Anello attorno al centro",
+				"ui_visualizer_wave": "Onda in basso",
+				"ui_vizsize": "Dimensione del visualizzatore"
 			},
 			"ja-jp": {
 				"ui_audioenabled": "オーディオに反応",
@@ -1434,6 +1518,7 @@
 				"ui_songcard_corner": "最初に表示し、その後は隅に",
 				"ui_songcard_off": "オフ",
 				"ui_songcard_start": "曲の始めだけ",
+				"ui_soundtime": "曲情報なしで音が続いてからショーが始まるまでの秒数",
 				"ui_textcolor": "カスタム文字色",
 				"ui_textmode": "文字色",
 				"ui_textmode_album": "アルバムジャケットから",
@@ -1445,7 +1530,13 @@
 				"ui_trigger_auto": "自動",
 				"ui_trigger_media": "プレーヤーが曲を通知したときだけ",
 				"ui_trigger_never": "しない（壁紙のまま）",
-				"ui_trigger_sound": "数秒間音が続いたらいつでも"
+				"ui_trigger_sound": "数秒間音が続いたらいつでも",
+				"ui_visualizer": "オーディオビジュアライザー",
+				"ui_visualizer_bars": "下部にバー",
+				"ui_visualizer_off": "オフ",
+				"ui_visualizer_ring": "中央を囲むリング",
+				"ui_visualizer_wave": "下部に波形",
+				"ui_vizsize": "ビジュアライザーのサイズ"
 			},
 			"ko-kr": {
 				"ui_audioenabled": "오디오에 반응",
@@ -1545,6 +1636,7 @@
 				"ui_songcard_corner": "처음에 표시한 뒤 모서리로",
 				"ui_songcard_off": "끄기",
 				"ui_songcard_start": "노래 시작 때만",
+				"ui_soundtime": "곡 정보 없이 소리가 이어진 뒤 쇼가 시작되기까지의 초",
 				"ui_textcolor": "사용자 지정 글자 색상",
 				"ui_textmode": "글자 색상",
 				"ui_textmode_album": "앨범 커버에서",
@@ -1556,7 +1648,13 @@
 				"ui_trigger_auto": "자동",
 				"ui_trigger_media": "플레이어가 노래를 알려 줄 때만",
 				"ui_trigger_never": "안 함 (배경 화면 유지)",
-				"ui_trigger_sound": "몇 초 동안 소리가 나면 언제든"
+				"ui_trigger_sound": "몇 초 동안 소리가 나면 언제든",
+				"ui_visualizer": "오디오 비주얼라이저",
+				"ui_visualizer_bars": "아래쪽 막대",
+				"ui_visualizer_off": "끄기",
+				"ui_visualizer_ring": "가운데를 두르는 링",
+				"ui_visualizer_wave": "아래쪽 파형",
+				"ui_vizsize": "비주얼라이저 크기"
 			},
 			"nl-nl": {
 				"ui_audioenabled": "Reageren op audio",
@@ -1656,6 +1754,7 @@
 				"ui_songcard_corner": "Aan het begin, daarna in een hoek",
 				"ui_songcard_off": "Uit",
 				"ui_songcard_start": "Alleen aan het begin van het nummer",
+				"ui_soundtime": "Seconden geluid zonder gemeld nummer voordat de show begint",
 				"ui_textcolor": "Eigen tekstkleur",
 				"ui_textmode": "Tekstkleur",
 				"ui_textmode_album": "Van de albumhoes",
@@ -1667,7 +1766,13 @@
 				"ui_trigger_auto": "Automatisch",
 				"ui_trigger_media": "Alleen als een speler een nummer doorgeeft",
 				"ui_trigger_never": "Nooit (de achtergrond blijft)",
-				"ui_trigger_sound": "Zodra er een paar seconden geluid is"
+				"ui_trigger_sound": "Zodra er een paar seconden geluid is",
+				"ui_visualizer": "Audiovisualizer",
+				"ui_visualizer_bars": "Balken onderaan",
+				"ui_visualizer_off": "Uit",
+				"ui_visualizer_ring": "Ring rond het midden",
+				"ui_visualizer_wave": "Golf onderaan",
+				"ui_vizsize": "Grootte van de visualizer"
 			},
 			"nb-no": {
 				"ui_audioenabled": "Reager på lyd",
@@ -1767,6 +1872,7 @@
 				"ui_songcard_corner": "I starten, deretter i et hjørne",
 				"ui_songcard_off": "Av",
 				"ui_songcard_start": "Bare i starten av sangen",
+				"ui_soundtime": "Sekunder med lyd uten rapportert sang før showet starter",
 				"ui_textcolor": "Egendefinert tekstfarge",
 				"ui_textmode": "Tekstfarge",
 				"ui_textmode_album": "Fra albumomslaget",
@@ -1778,7 +1884,13 @@
 				"ui_trigger_auto": "Automatisk",
 				"ui_trigger_media": "Bare når en spiller oppgir en sang",
 				"ui_trigger_never": "Aldri (behold bakgrunnsbildet)",
-				"ui_trigger_sound": "Så snart det er lyd i noen sekunder"
+				"ui_trigger_sound": "Så snart det er lyd i noen sekunder",
+				"ui_visualizer": "Lydvisualisering",
+				"ui_visualizer_bars": "Søyler nederst",
+				"ui_visualizer_off": "Av",
+				"ui_visualizer_ring": "Ring rundt midten",
+				"ui_visualizer_wave": "Bølge nederst",
+				"ui_vizsize": "Størrelse på visualiseringen"
 			},
 			"pl-pl": {
 				"ui_audioenabled": "Reaguj na dźwięk",
@@ -1878,6 +1990,7 @@
 				"ui_songcard_corner": "Na początku, potem w rogu",
 				"ui_songcard_off": "Wyłączone",
 				"ui_songcard_start": "Tylko na początku utworu",
+				"ui_soundtime": "Sekundy dźwięku bez zgłoszonego utworu przed startem show",
 				"ui_textcolor": "Własny kolor tekstu",
 				"ui_textmode": "Kolor tekstu",
 				"ui_textmode_album": "Z okładki albumu",
@@ -1889,7 +2002,13 @@
 				"ui_trigger_auto": "Automatycznie",
 				"ui_trigger_media": "Tylko gdy odtwarzacz poda utwór",
 				"ui_trigger_never": "Nigdy (zostaje tapeta)",
-				"ui_trigger_sound": "Gdy przez kilka sekund słychać dźwięk"
+				"ui_trigger_sound": "Gdy przez kilka sekund słychać dźwięk",
+				"ui_visualizer": "Wizualizer dźwięku",
+				"ui_visualizer_bars": "Słupki na dole",
+				"ui_visualizer_off": "Wyłączone",
+				"ui_visualizer_ring": "Pierścień wokół środka",
+				"ui_visualizer_wave": "Fala na dole",
+				"ui_vizsize": "Rozmiar wizualizera"
 			},
 			"pt-br": {
 				"ui_audioenabled": "Reagir ao áudio",
@@ -1989,6 +2108,7 @@
 				"ui_songcard_corner": "No início, depois num canto",
 				"ui_songcard_off": "Desligado",
 				"ui_songcard_start": "Só no início da música",
+				"ui_soundtime": "Segundos de som sem música informada antes do show começar",
 				"ui_textcolor": "Cor personalizada do texto",
 				"ui_textmode": "Cor do texto",
 				"ui_textmode_album": "Da capa do álbum",
@@ -2000,7 +2120,13 @@
 				"ui_trigger_auto": "Automático",
 				"ui_trigger_media": "Só quando um player informa uma música",
 				"ui_trigger_never": "Nunca (manter o papel de parede)",
-				"ui_trigger_sound": "Sempre que houver som por alguns segundos"
+				"ui_trigger_sound": "Sempre que houver som por alguns segundos",
+				"ui_visualizer": "Visualizador de áudio",
+				"ui_visualizer_bars": "Barras embaixo",
+				"ui_visualizer_off": "Desligado",
+				"ui_visualizer_ring": "Anel em volta do centro",
+				"ui_visualizer_wave": "Onda embaixo",
+				"ui_vizsize": "Tamanho do visualizador"
 			},
 			"pt-pt": {
 				"ui_audioenabled": "Reagir ao áudio",
@@ -2100,6 +2226,7 @@
 				"ui_songcard_corner": "No início, depois num canto",
 				"ui_songcard_off": "Desligado",
 				"ui_songcard_start": "Só no início da música",
+				"ui_soundtime": "Segundos de som sem música informada antes do show começar",
 				"ui_textcolor": "Cor personalizada do texto",
 				"ui_textmode": "Cor do texto",
 				"ui_textmode_album": "Da capa do álbum",
@@ -2111,7 +2238,13 @@
 				"ui_trigger_auto": "Automático",
 				"ui_trigger_media": "Só quando um leitor indica uma música",
 				"ui_trigger_never": "Nunca (manter a imagem de fundo)",
-				"ui_trigger_sound": "Sempre que houver som durante alguns segundos"
+				"ui_trigger_sound": "Sempre que houver som durante alguns segundos",
+				"ui_visualizer": "Visualizador de áudio",
+				"ui_visualizer_bars": "Barras embaixo",
+				"ui_visualizer_off": "Desligado",
+				"ui_visualizer_ring": "Anel em volta do centro",
+				"ui_visualizer_wave": "Onda embaixo",
+				"ui_vizsize": "Tamanho do visualizador"
 			},
 			"ro-ro": {
 				"ui_audioenabled": "Reacționează la audio",
@@ -2211,6 +2344,7 @@
 				"ui_songcard_corner": "La început, apoi într-un colț",
 				"ui_songcard_off": "Dezactivat",
 				"ui_songcard_start": "Doar la începutul melodiei",
+				"ui_soundtime": "Secunde de sunet fără melodie raportată înainte de începerea show-ului",
 				"ui_textcolor": "Culoare personalizată a textului",
 				"ui_textmode": "Culoarea textului",
 				"ui_textmode_album": "De pe coperta albumului",
@@ -2222,7 +2356,13 @@
 				"ui_trigger_auto": "Automat",
 				"ui_trigger_media": "Doar când un player raportează o melodie",
 				"ui_trigger_never": "Niciodată (rămâne imaginea de fundal)",
-				"ui_trigger_sound": "Oricând se aude sunet timp de câteva secunde"
+				"ui_trigger_sound": "Oricând se aude sunet timp de câteva secunde",
+				"ui_visualizer": "Vizualizator audio",
+				"ui_visualizer_bars": "Bare jos",
+				"ui_visualizer_off": "Dezactivat",
+				"ui_visualizer_ring": "Inel în jurul centrului",
+				"ui_visualizer_wave": "Undă jos",
+				"ui_vizsize": "Dimensiunea vizualizatorului"
 			},
 			"ru-ru": {
 				"ui_audioenabled": "Реагировать на звук",
@@ -2322,6 +2462,7 @@
 				"ui_songcard_corner": "В начале, затем в углу",
 				"ui_songcard_off": "Выкл.",
 				"ui_songcard_start": "Только в начале песни",
+				"ui_soundtime": "Секунды звука без известной песни до начала шоу",
 				"ui_textcolor": "Свой цвет текста",
 				"ui_textmode": "Цвет текста",
 				"ui_textmode_album": "С обложки альбома",
@@ -2333,7 +2474,13 @@
 				"ui_trigger_auto": "Автоматически",
 				"ui_trigger_media": "Только когда плеер сообщает о песне",
 				"ui_trigger_never": "Никогда (оставить обои)",
-				"ui_trigger_sound": "Когда звук звучит несколько секунд"
+				"ui_trigger_sound": "Когда звук звучит несколько секунд",
+				"ui_visualizer": "Аудиовизуализатор",
+				"ui_visualizer_bars": "Столбики внизу",
+				"ui_visualizer_off": "Выкл.",
+				"ui_visualizer_ring": "Кольцо вокруг центра",
+				"ui_visualizer_wave": "Волна внизу",
+				"ui_vizsize": "Размер визуализатора"
 			},
 			"sk-sk": {
 				"ui_audioenabled": "Reagovať na zvuk",
@@ -2433,6 +2580,7 @@
 				"ui_songcard_corner": "Na začiatku, potom v rohu",
 				"ui_songcard_off": "Vypnuté",
 				"ui_songcard_start": "Len na začiatku skladby",
+				"ui_soundtime": "Sekundy zvuku bez nahlásenej skladby pred začiatkom show",
 				"ui_textcolor": "Vlastná farba textu",
 				"ui_textmode": "Farba textu",
 				"ui_textmode_album": "Z obalu albumu",
@@ -2444,7 +2592,13 @@
 				"ui_trigger_auto": "Automaticky",
 				"ui_trigger_media": "Len keď prehrávač hlási skladbu",
 				"ui_trigger_never": "Nikdy (ponechať tapetu)",
-				"ui_trigger_sound": "Vždy, keď znie zvuk niekoľko sekúnd"
+				"ui_trigger_sound": "Vždy, keď znie zvuk niekoľko sekúnd",
+				"ui_visualizer": "Zvukový vizualizér",
+				"ui_visualizer_bars": "Stĺpce dole",
+				"ui_visualizer_off": "Vypnuté",
+				"ui_visualizer_ring": "Prstenec okolo stredu",
+				"ui_visualizer_wave": "Vlna dole",
+				"ui_vizsize": "Veľkosť vizualizéra"
 			},
 			"sl-si": {
 				"ui_audioenabled": "Odzivaj se na zvok",
@@ -2544,6 +2698,7 @@
 				"ui_songcard_corner": "Na začetku, nato v kotu",
 				"ui_songcard_off": "Izklopljeno",
 				"ui_songcard_start": "Samo na začetku skladbe",
+				"ui_soundtime": "Sekunde zvoka brez sporočene skladbe, preden se šov začne",
 				"ui_textcolor": "Barva besedila po meri",
 				"ui_textmode": "Barva besedila",
 				"ui_textmode_album": "Iz ovitka albuma",
@@ -2555,7 +2710,13 @@
 				"ui_trigger_auto": "Samodejno",
 				"ui_trigger_media": "Samo ko predvajalnik sporoči skladbo",
 				"ui_trigger_never": "Nikoli (ostane ozadje namizja)",
-				"ui_trigger_sound": "Kadar se nekaj sekund sliši zvok"
+				"ui_trigger_sound": "Kadar se nekaj sekund sliši zvok",
+				"ui_visualizer": "Zvočni vizualizator",
+				"ui_visualizer_bars": "Stolpci spodaj",
+				"ui_visualizer_off": "Izklopljeno",
+				"ui_visualizer_ring": "Obroč okoli središča",
+				"ui_visualizer_wave": "Val spodaj",
+				"ui_vizsize": "Velikost vizualizatorja"
 			},
 			"sv-se": {
 				"ui_audioenabled": "Reagera på ljud",
@@ -2655,6 +2816,7 @@
 				"ui_songcard_corner": "I början, sedan i ett hörn",
 				"ui_songcard_off": "Av",
 				"ui_songcard_start": "Bara i början av låten",
+				"ui_soundtime": "Sekunder ljud utan rapporterad låt innan showen startar",
 				"ui_textcolor": "Anpassad textfärg",
 				"ui_textmode": "Textfärg",
 				"ui_textmode_album": "Från skivomslaget",
@@ -2666,7 +2828,13 @@
 				"ui_trigger_auto": "Automatiskt",
 				"ui_trigger_media": "Bara när en spelare anger en låt",
 				"ui_trigger_never": "Aldrig (behåll bakgrundsbilden)",
-				"ui_trigger_sound": "Så fort det hörs ljud i några sekunder"
+				"ui_trigger_sound": "Så fort det hörs ljud i några sekunder",
+				"ui_visualizer": "Ljudvisualisering",
+				"ui_visualizer_bars": "Staplar nertill",
+				"ui_visualizer_off": "Av",
+				"ui_visualizer_ring": "Ring runt mitten",
+				"ui_visualizer_wave": "Våg nertill",
+				"ui_vizsize": "Visualiseringens storlek"
 			},
 			"tr-tr": {
 				"ui_audioenabled": "Sese tepki ver",
@@ -2766,6 +2934,7 @@
 				"ui_songcard_corner": "Başta, sonra bir köşede",
 				"ui_songcard_off": "Kapalı",
 				"ui_songcard_start": "Yalnızca şarkının başında",
+				"ui_soundtime": "Bildirilen şarkı olmadan gösteri başlamadan önceki ses süresi (saniye)",
 				"ui_textcolor": "Özel metin rengi",
 				"ui_textmode": "Metin rengi",
 				"ui_textmode_album": "Albüm kapağından",
@@ -2777,7 +2946,13 @@
 				"ui_trigger_auto": "Otomatik",
 				"ui_trigger_media": "Yalnızca bir oynatıcı şarkı bildirdiğinde",
 				"ui_trigger_never": "Asla (duvar kâğıdı kalır)",
-				"ui_trigger_sound": "Birkaç saniye ses olduğunda"
+				"ui_trigger_sound": "Birkaç saniye ses olduğunda",
+				"ui_visualizer": "Ses görselleştirici",
+				"ui_visualizer_bars": "Altta çubuklar",
+				"ui_visualizer_off": "Kapalı",
+				"ui_visualizer_ring": "Merkezin etrafında halka",
+				"ui_visualizer_wave": "Altta dalga",
+				"ui_vizsize": "Görselleştirici boyutu"
 			},
 			"uk-ua": {
 				"ui_audioenabled": "Реагувати на звук",
@@ -2877,6 +3052,7 @@
 				"ui_songcard_corner": "На початку, потім у куті",
 				"ui_songcard_off": "Вимк.",
 				"ui_songcard_start": "Лише на початку пісні",
+				"ui_soundtime": "Секунди звуку без відомої пісні до початку шоу",
 				"ui_textcolor": "Власний колір тексту",
 				"ui_textmode": "Колір тексту",
 				"ui_textmode_album": "З обкладинки альбому",
@@ -2888,7 +3064,13 @@
 				"ui_trigger_auto": "Автоматично",
 				"ui_trigger_media": "Лише коли плеєр повідомляє про пісню",
 				"ui_trigger_never": "Ніколи (залишити шпалери)",
-				"ui_trigger_sound": "Щоразу, коли звук лунає кілька секунд"
+				"ui_trigger_sound": "Щоразу, коли звук лунає кілька секунд",
+				"ui_visualizer": "Аудіовізуалізатор",
+				"ui_visualizer_bars": "Стовпчики внизу",
+				"ui_visualizer_off": "Вимк.",
+				"ui_visualizer_ring": "Кільце навколо центру",
+				"ui_visualizer_wave": "Хвиля внизу",
+				"ui_vizsize": "Розмір візуалізатора"
 			},
 			"vi-vn": {
 				"ui_audioenabled": "Phản ứng với âm thanh",
@@ -2988,6 +3170,7 @@
 				"ui_songcard_corner": "Lúc đầu, sau đó ở góc",
 				"ui_songcard_off": "Tắt",
 				"ui_songcard_start": "Chỉ lúc đầu bài hát",
+				"ui_soundtime": "Số giây có âm thanh mà không có bài hát được báo trước khi buổi diễn bắt đầu",
 				"ui_textcolor": "Màu chữ tùy chỉnh",
 				"ui_textmode": "Màu chữ",
 				"ui_textmode_album": "Theo bìa album",
@@ -2999,7 +3182,13 @@
 				"ui_trigger_auto": "Tự động",
 				"ui_trigger_media": "Chỉ khi trình phát báo có bài hát",
 				"ui_trigger_never": "Không bao giờ (giữ hình nền)",
-				"ui_trigger_sound": "Bất cứ khi nào có âm thanh trong vài giây"
+				"ui_trigger_sound": "Bất cứ khi nào có âm thanh trong vài giây",
+				"ui_visualizer": "Trình hiển thị âm thanh",
+				"ui_visualizer_bars": "Cột ở dưới",
+				"ui_visualizer_off": "Tắt",
+				"ui_visualizer_ring": "Vòng quanh trung tâm",
+				"ui_visualizer_wave": "Sóng ở dưới",
+				"ui_vizsize": "Kích thước trình hiển thị"
 			},
 			"zh-chs": {
 				"ui_audioenabled": "响应音频",
@@ -3099,6 +3288,7 @@
 				"ui_songcard_corner": "开头显示，之后移到角落",
 				"ui_songcard_off": "关闭",
 				"ui_songcard_start": "仅在歌曲开头",
+				"ui_soundtime": "没有歌曲信息时，持续多少秒声音后开始演出",
 				"ui_textcolor": "自定义文字颜色",
 				"ui_textmode": "文字颜色",
 				"ui_textmode_album": "取自专辑封面",
@@ -3110,7 +3300,13 @@
 				"ui_trigger_auto": "自动",
 				"ui_trigger_media": "仅当播放器提供歌曲信息时",
 				"ui_trigger_never": "从不（保持壁纸）",
-				"ui_trigger_sound": "只要持续几秒有声音"
+				"ui_trigger_sound": "只要持续几秒有声音",
+				"ui_visualizer": "音频可视化",
+				"ui_visualizer_bars": "底部条形",
+				"ui_visualizer_off": "关闭",
+				"ui_visualizer_ring": "围绕中心的圆环",
+				"ui_visualizer_wave": "底部波形",
+				"ui_vizsize": "可视化大小"
 			},
 			"zh-cht": {
 				"ui_audioenabled": "回應音訊",
@@ -3210,6 +3406,7 @@
 				"ui_songcard_corner": "開頭顯示，之後移到角落",
 				"ui_songcard_off": "關閉",
 				"ui_songcard_start": "僅在歌曲開頭",
+				"ui_soundtime": "沒有歌曲資訊時，持續多少秒聲音後開始演出",
 				"ui_textcolor": "自訂文字顏色",
 				"ui_textmode": "文字顏色",
 				"ui_textmode_album": "取自專輯封面",
@@ -3221,7 +3418,13 @@
 				"ui_trigger_auto": "自動",
 				"ui_trigger_media": "僅在播放器提供歌曲資訊時",
 				"ui_trigger_never": "永不（保持桌布）",
-				"ui_trigger_sound": "只要持續幾秒有聲音"
+				"ui_trigger_sound": "只要持續幾秒有聲音",
+				"ui_visualizer": "音訊視覺化",
+				"ui_visualizer_bars": "底部長條",
+				"ui_visualizer_off": "關閉",
+				"ui_visualizer_ring": "環繞中心的圓環",
+				"ui_visualizer_wave": "底部波形",
+				"ui_vizsize": "視覺化大小"
 			}
 		},
 		"properties": {
@@ -3511,8 +3714,19 @@
 				],
 				"value": "auto"
 			},
-			"transition": {
+			"soundtime": {
 				"order": 14,
+				"text": "ui_soundtime",
+				"type": "slider",
+				"condition": "trigger.value != 'media' && trigger.value != 'always' && trigger.value != 'never'",
+				"min": 3,
+				"max": 60,
+				"step": 1,
+				"value": 10,
+				"editable": true
+			},
+			"transition": {
+				"order": 15,
 				"text": "ui_transition",
 				"type": "slider",
 				"min": 0.5,
@@ -3524,7 +3738,7 @@
 				"precision": 1
 			},
 			"returndelay": {
-				"order": 15,
+				"order": 16,
 				"text": "ui_returndelay",
 				"type": "slider",
 				"min": 2,
@@ -3534,7 +3748,7 @@
 				"editable": true
 			},
 			"bgstyle": {
-				"order": 16,
+				"order": 17,
 				"text": "ui_bgstyle",
 				"type": "combo",
 				"options": [
@@ -3558,13 +3772,13 @@
 				"value": "aurora"
 			},
 			"reactive": {
-				"order": 17,
+				"order": 18,
 				"text": "ui_reactive",
 				"type": "bool",
 				"value": true
 			},
 			"reactiveamt": {
-				"order": 18,
+				"order": 19,
 				"text": "ui_reactiveamt",
 				"type": "slider",
 				"condition": "reactive.value == true",
@@ -3577,13 +3791,51 @@
 				"precision": 2
 			},
 			"particles": {
-				"order": 19,
+				"order": 20,
 				"text": "ui_particles",
 				"type": "bool",
 				"value": true
 			},
+			"visualizer": {
+				"order": 21,
+				"text": "ui_visualizer",
+				"type": "combo",
+				"condition": "audioenabled.value == true",
+				"options": [
+					{
+						"label": "ui_visualizer_off",
+						"value": "off"
+					},
+					{
+						"label": "ui_visualizer_bars",
+						"value": "bars"
+					},
+					{
+						"label": "ui_visualizer_wave",
+						"value": "wave"
+					},
+					{
+						"label": "ui_visualizer_ring",
+						"value": "ring"
+					}
+				],
+				"value": "bars"
+			},
+			"vizsize": {
+				"order": 22,
+				"text": "ui_vizsize",
+				"type": "slider",
+				"condition": "audioenabled.value == true && visualizer.value != 'off'",
+				"min": 0.3,
+				"max": 2,
+				"step": 0.05,
+				"value": 1,
+				"editable": true,
+				"fraction": true,
+				"precision": 2
+			},
 			"songcard": {
-				"order": 20,
+				"order": 23,
 				"text": "ui_songcard",
 				"type": "combo",
 				"options": [
@@ -3603,36 +3855,36 @@
 				"value": "corner"
 			},
 			"showcover": {
-				"order": 21,
+				"order": 24,
 				"text": "ui_showcover",
 				"type": "bool",
 				"condition": "songcard.value != 'off'",
 				"value": true
 			},
 			"showcolor": {
-				"order": 22,
+				"order": 25,
 				"text": "ui_showcolor",
 				"type": "color",
 				"value": "0.360 0.450 1.000"
 			},
 			"hdr_lyrics": {
-				"order": 23,
+				"order": 26,
 				"text": "ui_hdr_lyrics",
 				"type": "text"
 			},
 			"note_lyrics": {
-				"order": 24,
+				"order": 27,
 				"text": "ui_note_lyrics",
 				"type": "text"
 			},
 			"lyrics": {
-				"order": 25,
+				"order": 28,
 				"text": "ui_lyrics",
 				"type": "bool",
 				"value": true
 			},
 			"lyricanim": {
-				"order": 26,
+				"order": 29,
 				"text": "ui_lyricanim",
 				"type": "combo",
 				"condition": "lyrics.value == true",
@@ -3653,7 +3905,7 @@
 				"value": "karaoke"
 			},
 			"lyricfont": {
-				"order": 27,
+				"order": 30,
 				"text": "ui_lyricfont",
 				"type": "combo",
 				"condition": "lyrics.value == true",
@@ -3682,7 +3934,7 @@
 				"value": "segoe"
 			},
 			"lyricsize": {
-				"order": 28,
+				"order": 31,
 				"text": "ui_lyricsize",
 				"type": "slider",
 				"condition": "lyrics.value == true",
@@ -3695,7 +3947,7 @@
 				"precision": 2
 			},
 			"lyricpos": {
-				"order": 29,
+				"order": 32,
 				"text": "ui_lyricpos",
 				"type": "combo",
 				"condition": "lyrics.value == true",
@@ -3716,14 +3968,14 @@
 				"value": "center"
 			},
 			"lyriccontext": {
-				"order": 30,
+				"order": 33,
 				"text": "ui_lyriccontext",
 				"type": "bool",
 				"condition": "lyrics.value == true",
 				"value": true
 			},
 			"textmode": {
-				"order": 31,
+				"order": 34,
 				"text": "ui_textmode",
 				"type": "combo",
 				"condition": "lyrics.value == true",
@@ -3744,21 +3996,21 @@
 				"value": "album"
 			},
 			"textcolor": {
-				"order": 32,
+				"order": 35,
 				"text": "ui_textcolor",
 				"type": "color",
 				"condition": "lyrics.value == true && textmode.value == 'custom'",
 				"value": "1.000 0.850 0.400"
 			},
 			"glowtext": {
-				"order": 33,
+				"order": 36,
 				"text": "ui_glowtext",
 				"type": "bool",
 				"condition": "lyrics.value == true",
 				"value": true
 			},
 			"lyricoffset": {
-				"order": 34,
+				"order": 37,
 				"text": "ui_lyricoffset",
 				"type": "slider",
 				"condition": "lyrics.value == true",
@@ -3771,18 +4023,18 @@
 				"precision": 1
 			},
 			"hdr_audio": {
-				"order": 35,
+				"order": 38,
 				"text": "ui_hdr_audio",
 				"type": "text"
 			},
 			"audioenabled": {
-				"order": 36,
+				"order": 39,
 				"text": "ui_audioenabled",
 				"type": "bool",
 				"value": true
 			},
 			"audiosensitivity": {
-				"order": 37,
+				"order": 40,
 				"text": "ui_audiosensitivity",
 				"type": "slider",
 				"condition": "audioenabled.value == true",
@@ -3795,12 +4047,12 @@
 				"precision": 2
 			},
 			"hdr_advanced": {
-				"order": 38,
+				"order": 41,
 				"text": "ui_hdr_advanced",
 				"type": "text"
 			},
 			"importcode": {
-				"order": 39,
+				"order": 42,
 				"text": "ui_importcode",
 				"type": "textinput",
 				"value": ""

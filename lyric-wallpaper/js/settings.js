@@ -84,21 +84,21 @@
     {
       id: 'neon', label: 'Neon Concert',
       values: {
-        bgstyle: 'spotlights', lyricfont: 'bahnschrift', lyricanim: 'words', textmode: 'album',
+        bgstyle: 'spotlights', visualizer: 'ring', lyricfont: 'bahnschrift', lyricanim: 'words', textmode: 'album',
         glowtext: true, particles: true, reactiveamt: 1.6
       }
     },
     {
       id: 'minimal', label: 'Minimal',
       values: {
-        bgstyle: 'minimal', lyricfont: 'segoe', lyricanim: 'fade', textmode: 'white',
+        bgstyle: 'minimal', visualizer: 'wave', lyricfont: 'segoe', lyricanim: 'fade', textmode: 'white',
         glowtext: false, particles: false, reactiveamt: 0.5, lyriccontext: false
       }
     },
     {
       id: 'cinema', label: 'Cinema',
       values: {
-        bgstyle: 'cover', lyricfont: 'georgia', lyricanim: 'karaoke', lyricpos: 'lower',
+        bgstyle: 'cover', visualizer: 'off', lyricfont: 'georgia', lyricanim: 'karaoke', lyricpos: 'lower',
         textmode: 'white', glowtext: true, particles: false, reactiveamt: 0.7
       }
     },
@@ -148,6 +148,8 @@
         ['always', 'Always (keep the show on)'],
         ['never', 'Never (keep the wallpaper)']
       ] },
+    { key: 'soundtime', group: 'show', label: 'Seconds of sound with no song reported before the show starts', type: 'slider', min: 3, max: 60, step: 1, def: 10,
+      cond: [{ k: 'trigger', ne: 'media' }, { k: 'trigger', ne: 'always' }, { k: 'trigger', ne: 'never' }] },
     { key: 'transition', group: 'show', label: 'Transition (seconds)', type: 'slider', min: 0.5, max: 6, step: 0.1, def: 2.5 },
     { key: 'returndelay', group: 'show', label: 'Back to the wallpaper after a pause of (seconds)', type: 'slider', min: 2, max: 60, step: 1, def: 8 },
     { key: 'bgstyle', group: 'show', label: 'Background', type: 'combo', def: 'aurora', look: true,
@@ -160,6 +162,15 @@
     { key: 'reactive', group: 'show', label: 'Background reacts to the music', type: 'bool', def: true, look: true },
     { key: 'reactiveamt', group: 'show', label: 'Reaction strength', type: 'slider', min: 0, max: 3, step: 0.05, def: 1, look: true, cond: ['reactive'] },
     { key: 'particles', group: 'show', label: 'Floating particles', type: 'bool', def: true, look: true },
+    { key: 'visualizer', group: 'show', label: 'Audio visualizer', type: 'combo', def: 'bars', look: true, cond: ['audioenabled'],
+      options: [
+        ['off', 'Off'],
+        ['bars', 'Bars at the bottom'],
+        ['wave', 'Wave at the bottom'],
+        ['ring', 'Ring around the center']
+      ] },
+    { key: 'vizsize', group: 'show', label: 'Visualizer size', type: 'slider', min: 0.3, max: 2, step: 0.05, def: 1, look: true,
+      cond: ['audioenabled', { k: 'visualizer', ne: 'off' }] },
     { key: 'songcard', group: 'show', label: 'Song title and artist', type: 'combo', def: 'corner', look: true,
       options: [
         ['corner', 'At the start, then in a corner'],
