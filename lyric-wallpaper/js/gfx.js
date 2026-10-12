@@ -395,7 +395,8 @@
     // A ring around the center: left and right mirror each other
     '  float r = length(q), a = atan(q.x, q.y);',
     '  float u = abs(a) / 3.14159265;',
-    '  float r0 = 0.27, h = 0.10 * k * band(u);',
+        // Wide enough for the song card (cover, title, artist, status) inside it
+    '  float r0 = 0.36, h = 0.10 * k * band(u);',
     '  float d = r - r0;',
     '  if (d < -0.02 || d > h + 0.08) return vec3(0.0);',
     '  vec3 col = mix(u_colA, u_colB, u);',
