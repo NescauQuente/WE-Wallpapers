@@ -148,6 +148,15 @@
   gap: 4px 10px;
   padding: 6px 0;
 }
+/* A choice list sits beside its label, or alone on the line below it when its
+   longest choice does not fit there: long choices (and translations) are never cut */
+#ls-settings .ls-row-combo {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+}
+#ls-settings .ls-row-combo label { flex: 1 1 100px; }
+#ls-settings .ls-row-combo select { flex: 0 1 auto; min-width: 0; max-width: 100%; margin-inline-start: auto; }
 #ls-settings .ls-row[hidden] { display: none; }
 #ls-settings .ls-row label { cursor: pointer; }
 #ls-settings .ls-val { color: var(--ls-panel-muted); font-size: 12px; font-variant-numeric: tabular-nums; }
@@ -176,7 +185,6 @@
   cursor: pointer;
 }
 #ls-settings select {
-  max-width: 180px;
   padding: 4px 6px;
   background: var(--ls-panel-raised);
   color: var(--ls-panel-text);

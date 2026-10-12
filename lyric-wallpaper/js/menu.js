@@ -69,18 +69,12 @@
       : 'hsla(' + h + ', ' + s + '%, ' + l + '%, ' + a + ')';
   }
 
-  // Relative luminance (WCAG) of an [r, g, b] color from 0 to 1
-  function luminance(rgb) {
-    var lin = rgb.map(function (v) { return v <= 0.03928 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4); });
-    return 0.2126 * lin[0] + 0.7152 * lin[1] + 0.0722 * lin[2];
-  }
-
   // c = { hue (degrees), sat (%), bgRGB: [r, g, b] 0–1 }: the main color and
   // the background behind the panel (light backgrounds get a light panel)
   function palette(c) {
     var bg = util.rgbToHsl(c.bgRGB), bh = bg[0], bs = Math.min(bg[1], 70);
     var h = c.hue, s = Math.min(c.sat, 90);
-    var light = luminance(c.bgRGB) > 0.3;   // a bright custom background gets a light panel
+    var light = util.luminance(c.bgRGB) > 0.3;   // a bright background (Windows 11 light) gets a light panel
     var al = light ? 38 : s < 12 ? 82 : 68; // accent lightness readable on the panel
     var panelL = light ? util.clamp(bg[2], 90, 97) : util.clamp(bg[2], 6, 13);
     function accent(alpha) { return hsl(h, s, al, alpha); }

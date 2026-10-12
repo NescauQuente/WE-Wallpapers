@@ -115,7 +115,8 @@ const project = {
     'a background that moves to the beat in the colors of the album cover and the lyrics of the ' +
     'song line by line, in sync (karaoke, word by word or whole lines). Back to the wallpaper when ' +
     'the music stops. Lyrics are looked up online on LRCLIB from the song that Wallpaper Engine ' +
-    'reports: turn on "Media integration" in its settings. Use the built-in wallpapers or your own image.',
+    'reports: turn on "Media integration" in its settings. While waiting it shows its own original ' +
+    'artwork in the style of the Windows wallpapers, or your own image.',
   file: 'index.html',
   general: {
     localization,

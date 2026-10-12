@@ -99,16 +99,28 @@
   // A local path from a Wallpaper Engine 'file' property → a file:/// URL.
   // Wallpaper Engine may hand the path over already percent-encoded
   // ("C%3A/Users/My%20Pictures/a.jpg") or plain ("C:\Users\My Pictures\a.jpg"):
-  // decode it once, then encode it once, so both end up the same. '#' and '?'
-  // would cut the path short in a URL, so they are escaped too. A value that is
-  // already a URL is kept; '' stays ''.
+  // an encoded path is decoded once, then every path is encoded once, so both
+  // end up the same. A path with backslashes is plain (encoding turns them into
+  // %5C), so a '%' in its file names stays as it is. '#' and '?' would cut the
+  // path short and quotes or parentheses would end a CSS url(…), so they are
+  // escaped too: the result is safe in url("…") and url('…'). Network shares
+  // (\\server\share\…) become file://server/share/…. A value that is already a
+  // URL is kept; '' (or a path that cannot be encoded) gives ''.
   function fileUrl(path) {
     path = String(path || '').trim();
     if (!path) return '';
     if (/^(file|https?|data|blob):/i.test(path)) return path;
-    try { path = decodeURIComponent(path); } catch (e) {}
-    path = path.replace(/\\/g, '/').replace(/^\/+/, '');
-    return 'file:///' + encodeURI(path).replace(/#/g, '%23').replace(/\?/g, '%3F');
+    if (path.indexOf('\\') < 0) {
+      try { path = decodeURIComponent(path); } catch (e) {}
+    }
+    // \\?\C:\… and \\?\UNC\server\… are long-path spellings of C:\… and \\server\…
+    path = path.replace(/\\/g, '/').replace(/^\/\/[?.]\/(unc\/)?/i, function (m, unc) { return unc ? '//' : ''; });
+    var share = /^\/\/[^/]/.test(path) && !/^\/+[a-z]:/i.test(path);
+    path = path.replace(/^\/+/, '');
+    try { path = encodeURI(path); } catch (e) { return ''; }
+    return (share ? 'file://' : 'file:///') + path.replace(/[#?'()]/g, function (c) {
+      return '%' + c.charCodeAt(0).toString(16).toUpperCase();
+    });
   }
 
   S.util = {

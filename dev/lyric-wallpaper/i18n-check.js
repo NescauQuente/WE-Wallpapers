@@ -42,6 +42,8 @@ const KEEP = [
   ['n.lyrics', /Wallpaper Engine/],
   ['n.idle', /C:\\Windows\\Web\\Wallpaper\\Windows\\img0\.jpg/]
 ];
+// A note that tells the user to pick a choice must name it as the panel does
+const REFS = [['n.idle', 'o.idlestyle.image']];
 
 let fails = 0;
 function check(name, ok, info) {
@@ -51,6 +53,9 @@ function check(name, ok, info) {
 
 const dicts = S.i18n.dicts();
 const codes = S.settings.LANGUAGES.map((l) => l[0]).filter((c) => c !== 'en');
+const FALLBACK = { 'pt-pt': 'pt' };
+// The text a language shows for key (pt-pt falls back to pt), undefined when untranslated
+const val = (c, k) => { for (; c; c = FALLBACK[c]) if (dicts[c] && dicts[c][k] !== undefined) return dicts[c][k]; };
 check('a file for every language in settings.js', codes.every((c) => dicts[c]) && files.length === codes.length,
   { missing: codes.filter((c) => !dicts[c]), files: files.length });
 
@@ -60,9 +65,13 @@ codes.forEach((c) => {
   const missing = c === 'pt-pt' ? [] : Object.keys(en).filter((k) => !(k in d) && !SAME.test(k));
   const keep = KEEP.filter(([k, re]) => k in d && !re.test(d[k])).map(([k]) => k);
   const empty = Object.keys(d).filter((k) => typeof d[k] !== 'string' || !d[k].trim());
+  const refs = REFS.filter(([k, ref]) => {
+    const note = val(c, k), label = val(c, ref);
+    return typeof note === 'string' && typeof label === 'string' && !note.toLowerCase().includes(label.toLowerCase());
+  }).map(([k, ref]) => k + ' should name ' + ref);
   check(c + ': complete, known keys, untranslatable parts kept',
-    !unknown.length && !missing.length && !keep.length && !empty.length,
-    { unknown, missing: missing.length > 8 ? missing.length + ' keys' : missing, keep, empty });
+    !unknown.length && !missing.length && !keep.length && !empty.length && !refs.length,
+    { unknown, missing: missing.length > 8 ? missing.length + ' keys' : missing, keep, empty, refs });
 });
 
 const I = S.i18n;

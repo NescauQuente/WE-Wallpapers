@@ -14,7 +14,10 @@ const HERE = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = path.join(HERE, '..', '..');
 const CHROME = process.env.CHROME || 'C:/Program Files/Google/Chrome/Application/chrome.exe';
 const PORT = 8765;
-const TYPES = { '.html': 'text/html; charset=utf-8', '.js': 'text/javascript; charset=utf-8', '.css': 'text/css', '.json': 'application/json' };
+const TYPES = {
+  '.html': 'text/html; charset=utf-8', '.js': 'text/javascript; charset=utf-8', '.css': 'text/css', '.json': 'application/json',
+  '.jpg': 'image/jpeg', '.jpeg': 'image/jpeg', '.png': 'image/png', '.webp': 'image/webp', '.svg': 'image/svg+xml'
+};
 
 const server = http.createServer((req, res) => {
   const file = path.join(ROOT, decodeURIComponent(new URL(req.url, 'http://x').pathname));
@@ -22,25 +25,29 @@ const server = http.createServer((req, res) => {
     res.writeHead(404).end();
     return;
   }
-  res.writeHead(200, { 'Content-Type': TYPES[path.extname(file)] || 'application/octet-stream' });
+  res.writeHead(200, { 'Content-Type': TYPES[path.extname(file).toLowerCase()] || 'application/octet-stream' });
   fs.createReadStream(file).pipe(res);
 }).listen(PORT, '127.0.0.1');
 
 function run(page, budget) {
   return new Promise((resolve) => {
+    const profile = path.join(os.tmpdir(), 'lyric-we-test-' + Date.now());
     const chrome = spawn(CHROME, [
       '--headless=new', '--use-angle=swiftshader', '--enable-unsafe-swiftshader', '--no-first-run',
       '--autoplay-policy=no-user-gesture-required',
       // Offline: the pages answer the lyrics requests with a fake fetch and
       // invented lines; nothing may reach lrclib.net from a test
       '--host-resolver-rules=MAP * ~NOTFOUND, EXCLUDE 127.0.0.1',
-      `--user-data-dir=${path.join(os.tmpdir(), 'lyric-we-test-' + Date.now())}`,
+      `--user-data-dir=${profile}`,
       '--window-size=1280,720', `--virtual-time-budget=${budget}`, '--dump-dom',
       `http://127.0.0.1:${PORT}/dev/lyric-wallpaper/${page}`
     ]);
     let dom = '';
     chrome.stdout.on('data', (d) => { dom += d; });
+    // A wrong CHROME path fails here (and may never reach 'exit')
+    chrome.on('error', (err) => resolve('EXCEPTION cannot start ' + CHROME + ': ' + err.message));
     chrome.on('exit', () => {
+      try { fs.rmSync(profile, { recursive: true, force: true }); } catch (e) { /* still locked: the OS cleans it */ }
       const m = dom.match(/<pre id="out">([\s\S]*?)<\/pre>/);
       resolve(m ? m[1].replace(/&gt;/g, '>').replace(/&lt;/g, '<').replace(/&quot;/g, '"').replace(/&amp;/g, '&') : 'no output');
     });
