@@ -479,6 +479,9 @@
   var HUSH = 0.25;     // s of total silence while 'playing' that holds the song's clock
   var hush = false;
   var shownPos = 0, shownTrack = -1, shownOffset = 0;   // the position the lyrics last showed
+  var lastLine = -1;       // the line sung last frame (a new one flashes the background)
+  var vizBoost = 1;        // the smart visualizer's size, eased (bigger with no line to sing)
+  var VIZ_BOOST = 1.7;
   var heard = false;   // this song has been heard (so the audio is really reaching us)
 
   function clockPlaying() {
@@ -577,6 +580,17 @@
     shownTrack = m.track;
     shownOffset = cfg.lyricoffset;
     line = L.status === 'synced' ? lyrics.lineAt(L.lines, pos) : -1;
+    var ln = line >= 0 ? L.lines[line] : null, sung = !!(ln && ln.text && ln.text.trim());
+    // A new line to sing: a flash in the background ('lyricbeat')
+    if (line !== lastLine) {
+      if (sung && cfg.lyricbeat && show.on) beat = Math.max(beat, 0.4);
+      lastLine = line;
+    }
+    // No line to sing (instrumental, before the first line, no lyrics, a show
+    // of sound alone): the visualizer takes the stage ('vizsmart')
+    var singing = sung && (pos - ln.t < 8 || ln.end - ln.t < 10) && !!songTitle();
+    var boostAim = cfg.vizsmart && show.on && !singing ? VIZ_BOOST : 1;
+    vizBoost += (boostAim - vizBoost) * Math.min(1, dt * 1.5);
 
     ss.show = show.eased;
     ss.lyricsOn = cfg.lyrics;
@@ -593,6 +607,7 @@
     ss.synced = songclock.synced();
     ss.bass = bass;
     ss.beat = on ? beat : 0;
+    ss.playing = show.source !== 'media' || clockPlaying();
     stage.update(dt, ss);
 
     // The background
@@ -611,10 +626,12 @@
     gp.volume = on ? Math.min(1, A.volume * sens) : 0;
     gp.beat = on ? beat : 0;
     gp.reactive = cfg.reactive && on ? cfg.reactiveamt : 0;
+    // The chorus: the background reacts harder ('chorus')
+    if (cfg.chorus && sung && ln.chorus) gp.reactive *= 1.35;
     gp.particles = cfg.particles;
     // The visualizer: the 64 audio bands, two by two (nothing without audio)
     gp.viz = on ? cfg.visualizer : 'off';
-    gp.vizSize = cfg.vizsize;
+    gp.vizSize = cfg.vizsize * vizBoost;
     // and their peaks, which fall slowly (the LED, bar and edge styles)
     for (var vb = 0, AB = A.bands; vb < 32; vb++) {
       var bv = on ? Math.min(1, (AB[vb * 2] + AB[vb * 2 + 1]) * 0.5 * sens) : 0;
@@ -703,7 +720,7 @@
     '[00:23.00]A quiet break is coming up next',
     '[00:27.00]',
     '[00:36.00]Back again after the little break',
-    '[00:40.00]The karaoke fill moves along the line',
+    '[00:40.00]Every word on this stage is invented',   // comes back: the chorus
     '[00:44.50]A longer line wraps onto two rows when it has to and shrinks to fit the screen',
     '[00:51.00]The last invented line before the end'
   ].join('\n');

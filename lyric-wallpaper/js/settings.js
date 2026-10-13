@@ -84,21 +84,21 @@
     {
       id: 'neon', label: 'Neon Concert',
       values: {
-        bgstyle: 'spotlights', visualizer: 'radial', lyricfont: 'bahnschrift', lyricanim: 'words', textmode: 'album',
+        bgstyle: 'spotlights', visualizer: 'radial', coverstyle: 'vinyl', lyricfont: 'bahnschrift', lyricanim: 'words', textmode: 'album',
         glowtext: true, particles: true, reactiveamt: 1.6
       }
     },
     {
       id: 'minimal', label: 'Minimal',
       values: {
-        bgstyle: 'minimal', visualizer: 'silk', lyricfont: 'segoe', lyricanim: 'fade', textmode: 'white',
+        bgstyle: 'minimal', visualizer: 'silk', lyricfont: 'segoe', lyricanim: 'blur', lyricbeat: false, textmode: 'white',
         glowtext: false, particles: false, reactiveamt: 0.5, lyriccontext: false
       }
     },
     {
       id: 'cinema', label: 'Cinema',
       values: {
-        bgstyle: 'cover', visualizer: 'off', lyricfont: 'georgia', lyricanim: 'karaoke', lyricpos: 'lower',
+        bgstyle: 'cover', visualizer: 'off', coverstyle: 'vinyl', lyricfont: 'georgia', lyricanim: 'karaoke', lyricpos: 'lower',
         textmode: 'white', glowtext: true, particles: false, reactiveamt: 0.7
       }
     },
@@ -175,6 +175,8 @@
         ['edges', 'Bars on the screen edges'],
         ['pulse', 'Pulse rings']
       ] },
+    { key: 'vizsmart', group: 'show', label: 'The visualizer grows when there is no line to sing', type: 'bool', def: true, look: true,
+      cond: ['audioenabled', { k: 'visualizer', ne: 'off' }] },
     { key: 'vizsize', group: 'show', label: 'Visualizer size', type: 'slider', min: 0.3, max: 2, step: 0.05, def: 1, look: true,
       cond: ['audioenabled', { k: 'visualizer', ne: 'off' }] },
     { key: 'songcard', group: 'show', label: 'Song title and artist', type: 'combo', def: 'corner', look: true,
@@ -185,6 +187,11 @@
       ] },
     { key: 'showcover', group: 'show', label: 'Album cover next to the title', type: 'bool', def: true, look: true,
       cond: [{ k: 'songcard', ne: 'off' }] },
+    { key: 'coverstyle', group: 'show', label: 'Album cover', type: 'combo', def: 'square', look: true,
+      cond: [{ k: 'songcard', ne: 'off' }, 'showcover'],
+      options: [['square', 'Square'], ['vinyl', 'Spinning vinyl record']] },
+    { key: 'progress', group: 'show', label: 'Song progress in the corner card', type: 'bool', def: true,
+      cond: [{ k: 'songcard', eq: 'corner' }] },
     { key: 'showcolor', group: 'show', label: 'Color when there is no album cover', type: 'color', def: '0.360 0.450 1.000', look: true },
 
     // Lyrics
@@ -193,8 +200,12 @@
       options: [
         ['karaoke', 'Karaoke (the line fills as it is sung)'],
         ['words', 'Word by word'],
-        ['fade', 'Whole line']
+        ['fade', 'Whole line'],
+        ['blur', 'Out of a blur'],
+        ['typewriter', 'Typewriter']
       ] },
+    { key: 'chorus', group: 'lyrics', label: 'Highlight the chorus (lines that come back)', type: 'bool', def: true, look: true, cond: LYRICS },
+    { key: 'lyricbeat', group: 'lyrics', label: 'Lyrics jump on the beat, each new line flashes', type: 'bool', def: true, look: true, cond: LYRICS },
     { key: 'lyricfont', group: 'lyrics', label: 'Font', type: 'combo', def: 'segoe', look: true, cond: LYRICS,
       options: [
         ['segoe', 'Modern'],

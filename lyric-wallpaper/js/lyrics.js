@@ -117,6 +117,18 @@
   // Lines without text are kept (instrumental breaks). end = the next line's
   // t; the last line lasts LAST_LINE s (or up to the end of the song when it
   // ends sooner). duration (s, optional): the song's.
+  // The chorus: lines whose words come back in the song (letters and digits
+  // only, any case; short ones like "oh" don't count) get chorus = true
+  function markChorus(lines) {
+    var count = {}, keys = [], i, k;
+    for (i = 0; i < lines.length; i++) {
+      k = String(lines[i].text || '').toLowerCase().replace(/[^\p{L}\p{N}]+/gu, '');
+      keys.push(k);
+      if (k.length >= 8) count[k] = (count[k] || 0) + 1;
+    }
+    for (i = 0; i < lines.length; i++) lines[i].chorus = (count[keys[i]] || 0) >= 2;
+  }
+
   function parseLRC(text, duration) {
     var rows = String(text || '').replace(/^\uFEFF/, '').split(/\r\n|\r|\n/);
     var list = [], offset = 0, i, m;
@@ -171,6 +183,7 @@
       else ln.end = duration > ln.t ? Math.min(duration, ln.t + LAST_LINE) : ln.t + LAST_LINE;
       if (ln.words) hasWords = true;
     }
+    markChorus(lines);
     return { lines: lines, hasWords: hasWords };
   }
 

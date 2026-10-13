@@ -15,6 +15,11 @@ It also opens directly in a browser (open `index.html`; press **M** for the sett
 ## What it needs
 
 - **Audio visualizer:** the spectrum in the album colors, in nine styles: bars, a wave, mirrored bars with a reflection, an LED equalizer with falling peaks and silk waves along the bottom; a ring, spikes or pulse rings around the center (the song card fits inside); bars along the screen edges (**Audio visualizer**, **Visualizer size**), drawn in the same pass as the background.
+- **The chorus:** lines that come back in the song are the chorus: bigger, brighter, in the accent color, and the background reacts harder (**Highlight the chorus**).
+- **On the beat:** the current line jumps on the bass beats and every new line flashes the background (**Lyrics jump on the beat**).
+- **Smart visualizer:** with no line to sing (instrumental parts, before the first line, no lyrics, a show of sound alone) the visualizer grows and takes the stage.
+- **Song card:** a progress bar with the time in the corner card, and the cover as a square or as a spinning vinyl record that stops when the song is paused.
+- **Five lyric animations:** karaoke, word by word, whole line, out of a blur and typewriter.
 - **Media integration:** turn on **Media integration** in the Wallpaper Engine settings. That is how the wallpaper learns which song is playing (title, artist, album, cover) in Spotify, browsers and any player that shows up in the Windows media overlay. Without it the show still starts on sound, but there is no song title, no album colors and no lyrics.
 - **Song position:** players that report their position (Wallpaper Engine's media timeline) get lyrics synced to the second, seeks included. With players that don't, the timing is counted from the start of the song; **Timing adjustment** (Lyrics) moves the lyrics earlier or later.
 - **Internet access** for the lyrics.

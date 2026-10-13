@@ -208,6 +208,8 @@
       JSON.stringify(r.lines.map(function (l) { return [l.t, l.text]; })) === '[[9.5,"Echo line invented"],[19.5,""],[29.5,"Chorus made up"],[49.5,"Echo line invented"]]', r.lines);
     r = P('[00:12.00]<00:12.00>Every <00:12.50>word <00:13.10>counts');
     check('LRC: word stamps', r.hasWords && r.lines[0].text === 'Every word counts' && r.lines[0].words.map(function (w) { return w.t; }).join() === '12,12.5,13.1', r.lines[0]);
+    r = P('[00:01.00]An invented hook line\n[00:04.00]Something else made up\n[00:07.00]an invented hook, line!\n[00:09.00]oh\n[00:10.00]oh');
+    check('LRC: lines that come back are the chorus (short ones are not)', r.lines.map(function (l) { return l.chorus ? 1 : 0; }).join('') === '10100', r.lines);
     var three = P('[00:01.00]a\n[00:03.00]b\n[00:05.00]c').lines;
     check('lineAt', [0, 1, 2.5, 3.5, 99].map(function (p) { return S.lyrics.lineAt(three, p); }).join() === '-1,0,0,1,2', null);
     function C(t, a) { var c = S.lyrics.cleanTitle(t, a); return c.track + ' | ' + c.artist; }
@@ -659,6 +661,8 @@
     run(D.cfg.transition + 0.2);
     check('…without the paused song: no card, no lyrics', st().lyrics === 'off' && !ST.state().hero && !ST.state().corner && !ST.state().lyrics, [st(), ST.state()]);
     check('…and no media integration advice (it is on)', ST.state().message !== 'show.noMedia', ST.state());
+    run(2);
+    check('smart visualizer: bigger with no line to sing', D.gfxParams().vizSize > D.cfg.vizsize * 1.5, D.gfxParams().vizSize);
     var vb = D.gfxParams ? D.gfxParams().bands : null;
     check('visualizer: the spectrum reaches the background', !!vb && vb.length === 32 && Array.prototype.some.call(vb, function (v) { return v > 0.05; }), vb && Array.prototype.slice.call(vb, 0, 8));
     play(true);

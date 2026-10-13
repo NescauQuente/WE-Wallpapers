@@ -45,6 +45,8 @@
   var SIDE = 0.6;           // scale of the previous and next lines…
   var SIDE_REL = 0.8;       // …and never more than this of the current one (a shrunk long line)
   var PULSE = 0.02;         // the bass pulse of the current line (2 %)
+  var KICK = 0.045;         // the beat kick of the current line ('lyricbeat')
+  var CHORUS_SCALE = 1.07;  // a chorus line ('chorus') is this much bigger
 
   // Item ids: line i → 2i + 2; the pause after line i → 2i + 3 (the intro,
   // before line 0, is 1); NONE = nothing current; WHOLE = the whole song is
@@ -68,7 +70,8 @@
 
   var cfg = {
     lyricfont: 'segoe', lyricsize: 1, lyricpos: 'center', lyricanim: 'karaoke',
-    lyriccontext: true, glowtext: true, songcard: 'corner', showcover: true
+    lyriccontext: true, glowtext: true, songcard: 'corner', showcover: true,
+    chorus: true, lyricbeat: true, progress: true, coverstyle: 'square'
   };
   var font = FONTS.segoe;
   var applied = null;        // what the last apply() set: { key: value, …, lang }
@@ -77,6 +80,8 @@
   var root = null, wrap, box, plainBox, plainText, statusEl;
   var hero, heroCover, heroTitle, heroArtist, heroStatus;
   var corner, cornerCover, cornerTitle, cornerArtist;
+  var progBox, progFill, progTime, progSet = -1, progSec = -1, progOn = false;
+  var kick = 0, playing = true;
   var cctx = null;           // a 2D context that normalizes CSS colors
 
   // The song
@@ -149,6 +154,10 @@
     var text = el('div', 'ls-corner-text', corner);
     cornerTitle = el('div', 'ls-corner-title', text);
     cornerArtist = el('div', 'ls-corner-artist', text);
+    // How far into the song: a thin bar and the time
+    progBox = el('div', 'ls-prog', text);
+    progFill = el('div', 'ls-prog-fill', el('div', 'ls-prog-bar', progBox));
+    progTime = el('div', 'ls-prog-time', progBox);
     [heroTitle, heroArtist, cornerTitle, cornerArtist].forEach(function (e) { e.dir = 'auto'; });
     heroCover.alt = cornerCover.alt = '';
     heroCover.onerror = function () { if (cover) wrap.classList.add('ls-nocover'); };
@@ -170,13 +179,13 @@
   // restart their animations
   function apply(c) {
     Object.keys(cfg).forEach(function (k) { if (c && c[k] !== undefined) cfg[k] = c[k]; });
-    if (!/^(karaoke|words|fade)$/.test(cfg.lyricanim)) cfg.lyricanim = 'karaoke';
+    if (!/^(karaoke|words|fade|blur|typewriter)$/.test(cfg.lyricanim)) cfg.lyricanim = 'karaoke';
     if (!/^(center|lower|left)$/.test(cfg.lyricpos)) cfg.lyricpos = 'center';
     if (!wrap) return;
     var lang = S.i18n && S.i18n.lang ? S.i18n.lang() : '', was = applied;
     applied = { lang: lang };
     Object.keys(cfg).forEach(function (k) { applied[k] = cfg[k]; });
-    if (!was || was.lang !== lang || was.lyricanim !== cfg.lyricanim) rebuild = true;   // the line contents
+    if (!was || was.lang !== lang || was.lyricanim !== cfg.lyricanim || was.chorus !== cfg.chorus) rebuild = true;   // the line contents
     if (rebuild || LAYOUT_KEYS.some(function (k) { return was[k] !== cfg[k]; })) dirty = true;   // measure again
     if (!was || was.showcover !== cfg.showcover) cover = null;
     if (!was || was.lang !== lang) msgKey = null;
@@ -193,6 +202,7 @@
     wrap.dataset.pos = cfg.lyricpos;
     wrap.dataset.anim = cfg.lyricanim;
     wrap.dataset.font = cfg.lyricfont;
+    wrap.dataset.cover = cfg.coverstyle === 'vinyl' ? 'vinyl' : 'square';
     wrap.classList.toggle('ls-ctx', !!cfg.lyriccontext);
     wrap.classList.toggle('ls-glowing', !!cfg.glowtext);
   }
@@ -490,12 +500,23 @@
     } else {
       var line = r.line = lines[(id - 2) / 2];
       tokens(r, line);
-      if (anim === 'words') {
+      r.chars = null;
+      if (anim === 'words' || anim === 'blur') {
         for (var i = 0; i < r.tok.length; i++) {
           var w = r.tok[i];
           w.el = el('span', 'ls-w', r.tx);
           w.el.textContent = w.word;
           if (w.space) r.tx.appendChild(document.createTextNode(w.space));
+        }
+      } else if (anim === 'typewriter') {
+        // Letter by letter: one span per character (only on the lines on screen)
+        r.chars = [];
+        r.cLit = -1;
+        var letters = Array.from(line.text);
+        for (var c = 0; c < letters.length; c++) {
+          var ch = el('span', 'ls-c', r.tx);
+          ch.textContent = letters[c];
+          r.chars.push(ch);
         }
       } else {
         r.tx.textContent = line.text;
@@ -530,7 +551,8 @@
   }
 
   function baseClass(r) {
-    return 'ls-line' + (r.gap ? ' ls-gap' : '') + (r.rtl ? ' ls-rtl' : '') + (r.bidi ? ' ls-bidi' : '');
+    return 'ls-line' + (r.gap ? ' ls-gap' : '') + (r.rtl ? ' ls-rtl' : '') + (r.bidi ? ' ls-bidi' : '') +
+      (cfg.chorus && r.line && r.line.chorus ? ' ls-chorus' : '');
   }
 
   function roleClass(r) {
@@ -670,12 +692,12 @@
       p = clamp01((pos - gapStart) / Math.max(0.1, gapEnd - gapStart));
     } else {
       var tok = r.tok, n = tok.length, k;
-      if (cfg.lyricanim === 'words') {
+      if (cfg.lyricanim === 'words' || cfg.lyricanim === 'blur') {
         for (k = 0; k < n && tok[k].t <= pos + 0.05; k++);
         if (k !== r.lit) lightWords(r, k);
         return;
       }
-      if (cfg.lyricanim !== 'karaoke') return;
+      if (cfg.lyricanim !== 'karaoke' && cfg.lyricanim !== 'typewriter') return;
       if (!n || r.total <= 0) p = 1;
       else if (pos <= tok[0].t) p = 0;
       else {
@@ -685,9 +707,27 @@
         p = (tok[k].c0 + (tok[k].c1 - tok[k].c0) * f) / r.total;
       }
     }
+    if (r.chars) {
+      lightChars(r, Math.round(p * r.chars.length));
+      return;
+    }
     if (Math.abs(p - r.p) < 0.0015 && !(p === 1 && r.p !== 1)) return;
     r.p = p;
     r.pEl.style.setProperty('--p', p.toFixed(4));
+  }
+
+  // Typewriter: the first k letters are typed, a caret after the last one
+  function lightChars(r, k) {
+    if (k === r.cLit) return;
+    // Only the letters between the old count and the new one change
+    var ch = r.chars;
+    var a = r.cLit < 0 ? 0 : Math.max(0, Math.min(k, r.cLit) - 1);
+    var b = r.cLit < 0 ? ch.length : Math.min(ch.length, Math.max(k, r.cLit) + 1);
+    for (var i = a; i < b; i++) {
+      ch[i].classList.toggle('ls-on', i < k);
+      ch[i].classList.toggle('ls-caret', i === k - 1 && k < ch.length);
+    }
+    r.cLit = k;
   }
 
   // Words mode: the first k words are on, the last of them is the newest
@@ -879,6 +919,11 @@
     if (dirty) relayout();
     colors(s.textColor, s.accentColor);
     song(s);
+    var pl = s.playing !== false;
+    if (pl !== playing) {
+      playing = pl;
+      wrap.classList.toggle('ls-paused', !pl);   // the vinyl stops turning
+    }
     cardTime += dt;
 
     // What the lyrics give
@@ -939,10 +984,17 @@
       toggle(statusEl, !!key && target === statusEl);
     }
 
-    // The bass pulse: quick to rise, slow to fall
+    progressBar(+s.pos || 0, +s.duration || 0);
+
+    // The bass pulse: quick to rise, slow to fall. With 'lyricbeat' a beat
+    // also kicks the line (a short jump in size); a chorus line is bigger
     var aim = clamp01((+s.bass || 0) * 0.75 + (+s.beat || 0) * 0.35);
     pulse += (aim - pulse) * Math.min(1, dt * (aim > pulse ? 14 : 4));
-    var sc = Math.round((1 + PULSE * pulse) * 2000) / 2000;
+    var kickAim = cfg.lyricbeat ? clamp01(+s.beat || 0) : 0;
+    kick = kickAim > kick ? kickAim : kick * Math.exp(-dt * 7);
+    if (kick < 0.002) kick = 0;
+    var big = cur && cfg.chorus && cur.line && cur.line.chorus ? CHORUS_SCALE : 1;
+    var sc = Math.round((1 + PULSE * pulse + KICK * kick) * big * 2000) / 2000;
     if (cur && lyricsOn && sc !== pulseSet) {
       pulseSet = sc;
       cur.inEl.style.transform = sc === 1 ? '' : 'scale(' + sc + ')';
@@ -957,6 +1009,33 @@
     for (var i = 0; i < pool.length; i++) {
       if (pool[i].role === 'out' && now - pool[i].outAt > OUT_TIME) recycle(pool[i]);
     }
+  }
+
+  // The song's progress in the corner card: the bar moves smoothly, the time
+  // changes once a second; nothing without a known duration
+  function progressBar(pos, duration) {
+    var want = cornerOn && cfg.progress && duration > 0;
+    if (want !== progOn) {
+      progOn = want;
+      progBox.classList.toggle('ls-on', want);
+    }
+    if (!want) return;
+    var p = clamp01(pos / duration), q = Math.round(p * 1000);
+    if (q !== progSet) {
+      progSet = q;
+      progFill.style.transform = 'scaleX(' + (q / 1000) + ')';
+    }
+    var sec = Math.floor(pos);
+    if (sec !== progSec) {
+      progSec = sec;
+      progTime.textContent = clock(pos) + ' / ' + clock(duration);
+    }
+  }
+
+  function clock(t) {
+    t = Math.max(0, Math.floor(t));
+    var m = Math.floor(t / 60), x = t % 60;
+    return m + ':' + (x < 10 ? '0' : '') + x;
   }
 
   function itemText(r) {
