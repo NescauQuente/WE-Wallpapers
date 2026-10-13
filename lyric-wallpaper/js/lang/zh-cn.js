@@ -54,6 +54,7 @@ Lyric.i18n.add('zh-cn', {
   'g.lyrics': '歌词',
   'n.lyrics': '歌词会根据 Wallpaper Engine 提供的歌名和歌手在线查找（lrclib.net）。请在 Wallpaper Engine 设置中开启“媒体集成”。',
   'g.audio': '音频',
+  'g.screens': '显示器',
   'g.advanced': '高级',
   's.language': '语言（菜单和消息）',
   'o.language.auto': '自动',
@@ -155,5 +156,13 @@ Lyric.i18n.add('zh-cn', {
   's.lyricoffset': '时间调整（秒；歌词出现太早时调高）',
   's.audioenabled': '响应音频',
   's.audiosensitivity': '整体灵敏度',
-  's.importcode': '导入代码（在浏览器菜单中生成）'
+  's.importcode': '导入代码（在浏览器菜单中生成）',
+  's.screens': '显示器（壁纸横跨拉伸）',
+  'o.screens.1': '单个屏幕',
+  'o.screens.auto': '自动（按宽高比）',
+  'o.screens.2': '并排 2 个屏幕',
+  'o.screens.3': '并排 3 个屏幕',
+  'o.screens.4': '并排 4 个屏幕',
+  's.lyricscreen': '显示歌词的屏幕',
+  's.sidecard': '其他屏幕显示正在播放的歌曲（封面、标题、进度）'
 });

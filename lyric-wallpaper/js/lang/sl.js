@@ -54,6 +54,7 @@ Lyric.i18n.add('sl', {
   'g.lyrics': 'Besedila',
   'n.lyrics': 'Besedila se iščejo na spletu (lrclib.net) po naslovu skladbe in izvajalcu, ki ju sporoči Wallpaper Engine. V nastavitvah Wallpaper Engine vklopite »Integracija medijev«.',
   'g.audio': 'Zvok',
+  'g.screens': 'Zasloni',
   'g.advanced': 'Napredno',
   's.language': 'Jezik (meni in sporočila)',
   'o.language.auto': 'Samodejno',
@@ -155,5 +156,13 @@ Lyric.i18n.add('sl', {
   's.lyricoffset': 'Časovna prilagoditev (sekunde; povečajte, če besedilo prihaja prezgodaj)',
   's.audioenabled': 'Odzivaj se na zvok',
   's.audiosensitivity': 'Splošna občutljivost',
-  's.importcode': 'Uvozi kodo (ustvarjeno v meniju brskalnika)'
+  's.importcode': 'Uvozi kodo (ustvarjeno v meniju brskalnika)',
+  's.screens': 'Zasloni (ozadje raztegnjeno čez njih)',
+  'o.screens.1': 'En zaslon',
+  'o.screens.auto': 'Samodejno (glede na razmerje stranic)',
+  'o.screens.2': '2 zaslona drug ob drugem',
+  'o.screens.3': '3 zasloni drug ob drugem',
+  'o.screens.4': '4 zasloni drug ob drugem',
+  's.lyricscreen': 'Zaslon z besedilom',
+  's.sidecard': 'Drugi zasloni prikazujejo skladbo, ki se predvaja (naslovnica, naslov, napredek)'
 });

@@ -54,6 +54,7 @@ Lyric.i18n.add('no', {
   'g.lyrics': 'Sangtekster',
   'n.lyrics': 'Sangtekstene hentes på nettet (lrclib.net) ut fra sangtittelen og artisten som Wallpaper Engine oppgir. Slå på «Medieintegrasjon» i innstillingene for Wallpaper Engine.',
   'g.audio': 'Lyd',
+  'g.screens': 'Skjermer',
   'g.advanced': 'Avansert',
   's.language': 'Språk (meny og meldinger)',
   'o.language.auto': 'Automatisk',
@@ -155,5 +156,13 @@ Lyric.i18n.add('no', {
   's.lyricoffset': 'Tidsjustering (sekunder; øk hvis teksten kommer for tidlig)',
   's.audioenabled': 'Reager på lyd',
   's.audiosensitivity': 'Generell følsomhet',
-  's.importcode': 'Importer kode (laget i nettlesermenyen)'
+  's.importcode': 'Importer kode (laget i nettlesermenyen)',
+  's.screens': 'Skjermer (bakgrunnen strukket over dem)',
+  'o.screens.1': 'Én skjerm',
+  'o.screens.auto': 'Automatisk (etter sideforhold)',
+  'o.screens.2': '2 skjermer side om side',
+  'o.screens.3': '3 skjermer side om side',
+  'o.screens.4': '4 skjermer side om side',
+  's.lyricscreen': 'Skjerm med teksten',
+  's.sidecard': 'De andre skjermene viser sangen som spilles (cover, tittel, fremdrift)'
 });

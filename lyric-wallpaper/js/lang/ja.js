@@ -54,6 +54,7 @@ Lyric.i18n.add('ja', {
   'g.lyrics': '歌詞',
   'n.lyrics': '歌詞は Wallpaper Engine が通知する曲名とアーティスト名をもとにオンライン（lrclib.net）で検索します。Wallpaper Engine の設定で「メディア統合」をオンにしてください。',
   'g.audio': 'オーディオ',
+  'g.screens': 'モニター',
   'g.advanced': '詳細',
   's.language': '言語（メニューとメッセージ）',
   'o.language.auto': '自動',
@@ -155,5 +156,13 @@ Lyric.i18n.add('ja', {
   's.lyricoffset': 'タイミング調整（秒。歌詞が早すぎるときは上げてください）',
   's.audioenabled': 'オーディオに反応',
   's.audiosensitivity': '全体の感度',
-  's.importcode': 'コードをインポート（ブラウザのメニューで作成）'
+  's.importcode': 'コードをインポート（ブラウザのメニューで作成）',
+  's.screens': 'モニター（壁紙を全体に引き伸ばす）',
+  'o.screens.1': '画面ひとつ',
+  'o.screens.auto': '自動（縦横比から判断）',
+  'o.screens.2': '横並び2画面',
+  'o.screens.3': '横並び3画面',
+  'o.screens.4': '横並び4画面',
+  's.lyricscreen': '歌詞を表示する画面',
+  's.sidecard': '他の画面に再生中の曲を表示（ジャケット・タイトル・進行）'
 });

@@ -54,6 +54,7 @@ Lyric.i18n.add('nl', {
   'g.lyrics': 'Songteksten',
   'n.lyrics': 'Songteksten worden online opgezocht (lrclib.net) aan de hand van de titel en artiest die Wallpaper Engine doorgeeft. Zet „Media-integratie” aan in de instellingen van Wallpaper Engine.',
   'g.audio': 'Audio',
+  'g.screens': 'Monitoren',
   'g.advanced': 'Geavanceerd',
   's.language': 'Taal (menu en meldingen)',
   'o.language.auto': 'Automatisch',
@@ -155,5 +156,13 @@ Lyric.i18n.add('nl', {
   's.lyricoffset': 'Timingcorrectie (seconden; verhoog als de tekst te vroeg komt)',
   's.audioenabled': 'Reageren op audio',
   's.audiosensitivity': 'Algemene gevoeligheid',
-  's.importcode': 'Code importeren (gemaakt in het browsermenu)'
+  's.importcode': 'Code importeren (gemaakt in het browsermenu)',
+  's.screens': 'Monitoren (achtergrond over allemaal gespreid)',
+  'o.screens.1': 'Eén scherm',
+  'o.screens.auto': 'Automatisch (op beeldverhouding)',
+  'o.screens.2': '2 schermen naast elkaar',
+  'o.screens.3': '3 schermen naast elkaar',
+  'o.screens.4': '4 schermen naast elkaar',
+  's.lyricscreen': 'Scherm met de tekst',
+  's.sidecard': 'De andere schermen tonen het nummer dat speelt (hoes, titel, voortgang)'
 });

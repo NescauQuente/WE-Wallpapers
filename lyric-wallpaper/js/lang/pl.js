@@ -54,6 +54,7 @@ Lyric.i18n.add('pl', {
   'g.lyrics': 'Tekst piosenki',
   'n.lyrics': 'Tekst jest wyszukiwany online (lrclib.net) na podstawie tytułu utworu i wykonawcy podawanych przez Wallpaper Engine. Włącz „Integracja multimediów” w ustawieniach Wallpaper Engine.',
   'g.audio': 'Dźwięk',
+  'g.screens': 'Monitory',
   'g.advanced': 'Zaawansowane',
   's.language': 'Język (menu i komunikaty)',
   'o.language.auto': 'Automatyczny',
@@ -155,5 +156,13 @@ Lyric.i18n.add('pl', {
   's.lyricoffset': 'Korekta synchronizacji (sekundy; zwiększ, jeśli tekst pojawia się za wcześnie)',
   's.audioenabled': 'Reaguj na dźwięk',
   's.audiosensitivity': 'Ogólna czułość',
-  's.importcode': 'Importuj kod (wygenerowany w menu przeglądarki)'
+  's.importcode': 'Importuj kod (wygenerowany w menu przeglądarki)',
+  's.screens': 'Monitory (tapeta rozciągnięta na nie)',
+  'o.screens.1': 'Jeden ekran',
+  'o.screens.auto': 'Automatycznie (według proporcji)',
+  'o.screens.2': '2 ekrany obok siebie',
+  'o.screens.3': '3 ekrany obok siebie',
+  'o.screens.4': '4 ekrany obok siebie',
+  's.lyricscreen': 'Ekran z tekstem',
+  's.sidecard': 'Pozostałe ekrany pokazują grany utwór (okładka, tytuł, postęp)'
 });

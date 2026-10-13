@@ -54,6 +54,7 @@ Lyric.i18n.add('zh-tw', {
   'g.lyrics': '歌詞',
   'n.lyrics': '歌詞會依 Wallpaper Engine 提供的歌名與歌手在線上搜尋（lrclib.net）。請在 Wallpaper Engine 設定中開啟「媒體整合」。',
   'g.audio': '音訊',
+  'g.screens': '螢幕',
   'g.advanced': '進階',
   's.language': '語言（選單與訊息）',
   'o.language.auto': '自動',
@@ -155,5 +156,13 @@ Lyric.i18n.add('zh-tw', {
   's.lyricoffset': '時間調整（秒；歌詞出現太早時調高）',
   's.audioenabled': '回應音訊',
   's.audiosensitivity': '整體靈敏度',
-  's.importcode': '匯入代碼（在瀏覽器選單中產生）'
+  's.importcode': '匯入代碼（在瀏覽器選單中產生）',
+  's.screens': '螢幕（桌布橫跨延展）',
+  'o.screens.1': '單一螢幕',
+  'o.screens.auto': '自動（依長寬比）',
+  'o.screens.2': '並排 2 個螢幕',
+  'o.screens.3': '並排 3 個螢幕',
+  'o.screens.4': '並排 4 個螢幕',
+  's.lyricscreen': '顯示歌詞的螢幕',
+  's.sidecard': '其他螢幕顯示正在播放的歌曲（封面、標題、進度）'
 });

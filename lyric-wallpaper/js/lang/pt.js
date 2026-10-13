@@ -54,6 +54,7 @@ Lyric.i18n.add('pt', {
   'g.lyrics': 'Letras',
   'n.lyrics': 'As letras são buscadas online (lrclib.net) pelo título da música e pelo artista que o Wallpaper Engine informa. Ative a "Integração de mídia" nas configurações do Wallpaper Engine.',
   'g.audio': 'Áudio',
+  'g.screens': 'Monitores',
   'g.advanced': 'Avançado',
   's.language': 'Idioma (menu e mensagens)',
   'o.language.auto': 'Automático',
@@ -155,5 +156,13 @@ Lyric.i18n.add('pt', {
   's.lyricoffset': 'Ajuste de sincronia (segundos; aumente se a letra vier adiantada)',
   's.audioenabled': 'Reagir ao áudio',
   's.audiosensitivity': 'Sensibilidade geral',
-  's.importcode': 'Importar código (gerado no menu do navegador)'
+  's.importcode': 'Importar código (gerado no menu do navegador)',
+  's.screens': 'Monitores (wallpaper esticado entre eles)',
+  'o.screens.1': 'Uma tela só',
+  'o.screens.auto': 'Automático (pela proporção)',
+  'o.screens.2': '2 telas lado a lado',
+  'o.screens.3': '3 telas lado a lado',
+  'o.screens.4': '4 telas lado a lado',
+  's.lyricscreen': 'Tela da letra',
+  's.sidecard': 'As outras telas mostram a música tocando (capa, título, progresso)'
 });

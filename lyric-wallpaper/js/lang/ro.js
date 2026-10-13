@@ -54,6 +54,7 @@ Lyric.i18n.add('ro', {
   'g.lyrics': 'Versuri',
   'n.lyrics': 'Versurile sunt căutate online (lrclib.net) după titlul melodiei și artistul raportate de Wallpaper Engine. Activați „Integrare media” în setările Wallpaper Engine.',
   'g.audio': 'Audio',
+  'g.screens': 'Monitoare',
   'g.advanced': 'Avansat',
   's.language': 'Limbă (meniu și mesaje)',
   'o.language.auto': 'Automat',
@@ -155,5 +156,13 @@ Lyric.i18n.add('ro', {
   's.lyricoffset': 'Ajustarea sincronizării (secunde; măriți dacă versurile apar prea devreme)',
   's.audioenabled': 'Reacționează la audio',
   's.audiosensitivity': 'Sensibilitate generală',
-  's.importcode': 'Importă cod (generat în meniul browserului)'
+  's.importcode': 'Importă cod (generat în meniul browserului)',
+  's.screens': 'Monitoare (fundal întins pe toate)',
+  'o.screens.1': 'Un singur ecran',
+  'o.screens.auto': 'Automat (după raportul de aspect)',
+  'o.screens.2': '2 ecrane alăturate',
+  'o.screens.3': '3 ecrane alăturate',
+  'o.screens.4': '4 ecrane alăturate',
+  's.lyricscreen': 'Ecranul cu versurile',
+  's.sidecard': 'Celelalte ecrane arată melodia care rulează (copertă, titlu, progres)'
 });

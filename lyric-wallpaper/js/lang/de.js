@@ -54,6 +54,7 @@ Lyric.i18n.add('de', {
   'g.lyrics': 'Songtexte',
   'n.lyrics': 'Songtexte werden online (lrclib.net) anhand von Songtitel und Interpret gesucht, die Wallpaper Engine meldet. Aktiviere „Medienintegration“ in den Einstellungen von Wallpaper Engine.',
   'g.audio': 'Audio',
+  'g.screens': 'Monitore',
   'g.advanced': 'Erweitert',
   's.language': 'Sprache (Menü und Meldungen)',
   'o.language.auto': 'Automatisch',
@@ -155,5 +156,13 @@ Lyric.i18n.add('de', {
   's.lyricoffset': 'Zeitkorrektur (Sekunden; erhöhen, wenn der Text zu früh kommt)',
   's.audioenabled': 'Auf Audio reagieren',
   's.audiosensitivity': 'Gesamtempfindlichkeit',
-  's.importcode': 'Code importieren (im Browser-Menü erzeugt)'
+  's.importcode': 'Code importieren (im Browser-Menü erzeugt)',
+  's.screens': 'Monitore (Hintergrund über alle gestreckt)',
+  'o.screens.1': 'Ein Bildschirm',
+  'o.screens.auto': 'Automatisch (nach Seitenverhältnis)',
+  'o.screens.2': '2 Bildschirme nebeneinander',
+  'o.screens.3': '3 Bildschirme nebeneinander',
+  'o.screens.4': '4 Bildschirme nebeneinander',
+  's.lyricscreen': 'Bildschirm mit dem Text',
+  's.sidecard': 'Die anderen Bildschirme zeigen den laufenden Song (Cover, Titel, Fortschritt)'
 });

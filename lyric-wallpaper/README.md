@@ -21,6 +21,7 @@ It also opens directly in a browser (open `index.html`; press **M** for the sett
 - **Song card:** a progress bar with the time in the corner card, and the cover as a square or as a spinning vinyl record that stops when the song is paused.
 - **Five lyric animations:** karaoke, word by word, whole line, out of a blur and typewriter.
 - **Transitions:** the wallpaper turns into the show (and back) as burning paper, ripples, pixels, shattered glass, a sweep of light, a vortex or a glitch, or a different one each time (**Transition effect**).
+- **Several monitors:** spanned across 2–4 screens (**Monitors**), the lyrics take one screen (**Screen with the lyrics**) and the others show a big "now playing" panel with the cover (the vinyl turns there too), title, artist and progress; the transitions and the round visualizers start from the lyrics screen.
 - **Media integration:** turn on **Media integration** in the Wallpaper Engine settings. That is how the wallpaper learns which song is playing (title, artist, album, cover) in Spotify, browsers and any player that shows up in the Windows media overlay. Without it the show still starts on sound, but there is no song title, no album colors and no lyrics.
 - **Song position:** players that report their position (Wallpaper Engine's media timeline) get lyrics synced to the second, seeks included. With players that don't, the timing is counted from the start of the song; **Timing adjustment** (Lyrics) moves the lyrics earlier or later.
 - **Internet access** for the lyrics.
@@ -38,7 +39,7 @@ Pick **My image** under **Wallpaper** (Before the music) and choose a picture in
 ## Installing in Wallpaper Engine
 
 1. Copy this folder to `...\steamapps\common\wallpaper_engine\projects\myprojects\lyric-stage\`.
-2. The wallpaper shows up as **Lyric Stage** under "My Wallpapers" (`preview.jpg` is its thumbnail).
+2. The wallpaper shows up as **Lyric Stage** under "My Wallpapers" (`preview.gif`, an animated demo with invented lines, is its thumbnail).
 3. Turn on **Media integration** in the Wallpaper Engine settings, if it is not on yet.
 
 ## Languages

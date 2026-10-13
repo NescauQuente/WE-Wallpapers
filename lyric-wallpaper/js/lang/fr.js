@@ -54,6 +54,7 @@ Lyric.i18n.add('fr', {
   'g.lyrics': 'Paroles',
   'n.lyrics': 'Les paroles sont recherchées en ligne (lrclib.net) à partir du titre et de l’artiste du morceau signalés par Wallpaper Engine. Activez « Intégration multimédia » dans les paramètres de Wallpaper Engine.',
   'g.audio': 'Audio',
+  'g.screens': 'Écrans',
   'g.advanced': 'Avancé',
   's.language': 'Langue (menu et messages)',
   'o.language.auto': 'Automatique',
@@ -155,5 +156,13 @@ Lyric.i18n.add('fr', {
   's.lyricoffset': 'Réglage de la synchro (secondes ; augmentez-le si les paroles arrivent trop tôt)',
   's.audioenabled': 'Réagir à l’audio',
   's.audiosensitivity': 'Sensibilité générale',
-  's.importcode': 'Importer un code (généré dans le menu du navigateur)'
+  's.importcode': 'Importer un code (généré dans le menu du navigateur)',
+  's.screens': 'Écrans (fond étendu sur tous)',
+  'o.screens.1': 'Un seul écran',
+  'o.screens.auto': 'Automatique (selon le format)',
+  'o.screens.2': '2 écrans côte à côte',
+  'o.screens.3': '3 écrans côte à côte',
+  'o.screens.4': '4 écrans côte à côte',
+  's.lyricscreen': 'Écran des paroles',
+  's.sidecard': 'Les autres écrans montrent le morceau en cours (pochette, titre, progression)'
 });

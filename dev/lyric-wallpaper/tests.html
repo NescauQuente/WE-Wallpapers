@@ -674,6 +674,16 @@
     check('transition "random": a real style each time, never the same twice in a row',
       seen.every(function (x) { return styles.indexOf(x) >= 0; }) && seen.every(function (x, i) { return !i || x !== seen[i - 1]; }) && D.gfxParams().trans === seen[seen.length - 1], seen);
     app.setValue('transfx', 'burn');
+    // Spanned across 3 monitors: the stage on the chosen one, a panel on each of the others
+    app.setValue('screens', '3');
+    app.setValue('lyricscreen', 2);
+    run(0.2);
+    var wrapEl = document.querySelector('.ls-wrap');
+    check('3 monitors: two "now playing" panels, the stage one screen wide', ST.state().sides === 2 &&
+      Math.abs(wrapEl.clientWidth - innerWidth / 3) < 2, { sides: ST.state().sides, w: wrapEl.clientWidth });
+    app.setValue('screens', '1');
+    run(0.2);
+    check('one monitor again: no panels, the whole page', ST.state().sides === 0 && Math.abs(wrapEl.clientWidth - innerWidth) < 2, ST.state());
     var vb = D.gfxParams ? D.gfxParams().bands : null;
     check('visualizer: the spectrum reaches the background', !!vb && vb.length === 32 && Array.prototype.some.call(vb, function (v) { return v > 0.05; }), vb && Array.prototype.slice.call(vb, 0, 8));
     play(true);

@@ -123,7 +123,7 @@ const project = {
     properties,
     supportsaudioprocessing: true
   },
-  preview: 'preview.jpg',
+  preview: 'preview.gif',
   tags: ['Music', 'Abstract'],
   title: 'Lyric Stage',
   type: 'web',

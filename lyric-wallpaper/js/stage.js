@@ -71,7 +71,7 @@
   var cfg = {
     lyricfont: 'segoe', lyricsize: 1, lyricpos: 'center', lyricanim: 'karaoke',
     lyriccontext: true, glowtext: true, songcard: 'corner', showcover: true,
-    chorus: true, lyricbeat: true, progress: true, coverstyle: 'square'
+    chorus: true, lyricbeat: true, progress: true, coverstyle: 'square', sidecard: true
   };
   var font = FONTS.segoe;
   var applied = null;        // what the last apply() set: { key: value, …, lang }
@@ -82,6 +82,9 @@
   var corner, cornerCover, cornerTitle, cornerArtist;
   var progBox, progFill, progTime, progSet = -1, progSec = -1, progOn = false;
   var kick = 0, playing = true;
+  // A wallpaper spanned across monitors: the stage on one screen, a "now
+  // playing" panel on each of the others
+  var sides = [], sideOn = false, sideSet = -1;
   var cctx = null;           // a 2D context that normalizes CSS colors
 
   // The song
@@ -861,11 +864,16 @@
       artist = aa;
       heroTitle.textContent = cornerTitle.textContent = tt;
       heroArtist.textContent = cornerArtist.textContent = aa;
+      for (var i = 0; i < sides.length; i++) {
+        sides[i].title.textContent = tt;
+        sides[i].artist.textContent = aa;
+      }
     }
     var c = (cfg.showcover && s.cover) || '';
     if (c !== cover) {
       cover = c;
       if (c) heroCover.src = cornerCover.src = c;
+      for (var j = 0; j < sides.length; j++) if (c) sides[j].cover.src = c;
       wrap.classList.toggle('ls-nocover', !c);
     }
   }
@@ -1011,9 +1019,70 @@
     }
   }
 
+  // regions: the screens, in CSS px ({ x0, w }), left to right; index: the one
+  // with the lyrics. One screen (or none given): the whole page
+  function setScreens(regions, index) {
+    if (!wrap) return;
+    var n = regions && regions.length > 1 ? regions.length : 1;
+    index = Math.min(n - 1, Math.max(0, index | 0));
+    var st = wrap.style, r = n > 1 ? regions[index] : null;
+    st.left = r ? r.x0 + 'px' : '';
+    st.right = r ? 'auto' : '';
+    st.width = r ? r.w + 'px' : '';
+    st.overflow = r ? 'visible' : '';   // the panels sit on the other screens
+    if (r) st.setProperty('--ls-vw', (r.w / 100) + 'px');
+    else st.removeProperty('--ls-vw');
+    while (sides.length) {
+      var old = sides.pop();
+      old.el.parentNode.removeChild(old.el);
+    }
+    for (var i = 0; r && i < n; i++) {
+      if (i === index) continue;
+      var o = regions[i], side = { el: el('div', 'ls-side', wrap) };
+      side.el.style.left = (o.x0 - r.x0) + 'px';
+      side.el.style.width = o.w + 'px';
+      side.cover = el('img', 'ls-side-cover', side.el);
+      side.cover.alt = '';
+      side.title = el('div', 'ls-side-title', side.el);
+      side.artist = el('div', 'ls-side-artist', side.el);
+      side.title.dir = side.artist.dir = 'auto';
+      var pr = el('div', 'ls-side-prog', side.el);
+      side.fill = el('div', 'ls-prog-fill', el('div', 'ls-prog-bar', pr));
+      side.time = el('div', 'ls-prog-time', pr);
+      side.title.textContent = title;
+      side.artist.textContent = artist;
+      if (cover) side.cover.src = cover;
+      sides.push(side);
+    }
+    sideOn = false;
+    sideSet = -1;
+    dirty = true;
+  }
+
   // The song's progress in the corner card: the bar moves smoothly, the time
   // changes once a second; nothing without a known duration
   function progressBar(pos, duration) {
+    // The other screens: the panel shows with a song, its bar with a duration
+    var sw = sides.length > 0 && cfg.sidecard && !!title;
+    if (sw !== sideOn) {
+      sideOn = sw;
+      for (var i = 0; i < sides.length; i++) sides[i].el.classList.toggle('ls-on', sw);
+    }
+    if (sideOn) {
+      var known = duration > 0, sq = known ? Math.round(clamp01(pos / duration) * 1000) : -2;
+      if (sq !== sideSet) {
+        var sec2 = Math.floor(pos), txt = known ? clock(pos) + ' / ' + clock(duration) : '';
+        for (var k = 0; k < sides.length; k++) {
+          sides[k].fill.style.transform = 'scaleX(' + (known ? sq / 1000 : 0) + ')';
+          if (sides[k].sec !== sec2 || !known) {
+            sides[k].sec = sec2;
+            sides[k].time.textContent = txt;
+          }
+          sides[k].el.classList.toggle('ls-noprog', !known);
+        }
+        sideSet = sq;
+      }
+    }
     var want = cornerOn && cfg.progress && duration > 0;
     if (want !== progOn) {
       progOn = want;
@@ -1048,9 +1117,12 @@
       visible: visible, hero: heroOn, corner: cornerOn, lyrics: lyricsOn, plain: plainOn,
       item: curId, message: msgKey || '', messageAt: msgAt,
       cur: itemText(cur), prev: itemText(prev), next: itemText(next),
-      pool: pool.length
+      pool: pool.length, sides: sides.length, sideOn: sideOn
     };
   }
 
-  S.stage = { init: init, apply: apply, update: update, state: state };
+  S.stage = {
+    init: init, apply: apply, update: update, state: state, setScreens: setScreens,
+    heroOn: function () { return heroOn; }     // the big song card is on screen
+  };
 })(window.Lyric = window.Lyric || {});

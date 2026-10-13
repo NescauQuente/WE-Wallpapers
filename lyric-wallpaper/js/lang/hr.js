@@ -54,6 +54,7 @@ Lyric.i18n.add('hr', {
   'g.lyrics': 'Stihovi',
   'n.lyrics': 'Stihovi se traže na internetu (lrclib.net) prema naslovu pjesme i izvođaču koje javlja Wallpaper Engine. Uključite „Integracija medija” u postavkama Wallpaper Enginea.',
   'g.audio': 'Zvuk',
+  'g.screens': 'Monitori',
   'g.advanced': 'Napredno',
   's.language': 'Jezik (izbornik i poruke)',
   'o.language.auto': 'Automatski',
@@ -155,5 +156,13 @@ Lyric.i18n.add('hr', {
   's.lyricoffset': 'Usklađivanje vremena (sekunde; povećajte ako stihovi dolaze prerano)',
   's.audioenabled': 'Reagiraj na zvuk',
   's.audiosensitivity': 'Ukupna osjetljivost',
-  's.importcode': 'Uvezi kod (izrađen u izborniku preglednika)'
+  's.importcode': 'Uvezi kod (izrađen u izborniku preglednika)',
+  's.screens': 'Monitori (pozadina razvučena preko njih)',
+  'o.screens.1': 'Jedan zaslon',
+  'o.screens.auto': 'Automatski (prema omjeru)',
+  'o.screens.2': '2 zaslona jedan pokraj drugog',
+  'o.screens.3': '3 zaslona jedan pokraj drugog',
+  'o.screens.4': '4 zaslona jedan pokraj drugog',
+  's.lyricscreen': 'Zaslon s tekstom',
+  's.sidecard': 'Ostali zasloni prikazuju pjesmu koja svira (omot, naslov, napredak)'
 });

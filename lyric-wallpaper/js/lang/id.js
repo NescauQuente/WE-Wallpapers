@@ -54,6 +54,7 @@ Lyric.i18n.add('id', {
   'g.lyrics': 'Lirik',
   'n.lyrics': 'Lirik dicari secara online (lrclib.net) berdasarkan judul lagu dan artis yang dilaporkan Wallpaper Engine. Aktifkan "Integrasi media" di pengaturan Wallpaper Engine.',
   'g.audio': 'Audio',
+  'g.screens': 'Monitor',
   'g.advanced': 'Lanjutan',
   's.language': 'Bahasa (menu dan pesan)',
   'o.language.auto': 'Otomatis',
@@ -155,5 +156,13 @@ Lyric.i18n.add('id', {
   's.lyricoffset': 'Penyesuaian waktu (detik; naikkan jika lirik muncul terlalu cepat)',
   's.audioenabled': 'Bereaksi terhadap audio',
   's.audiosensitivity': 'Sensitivitas umum',
-  's.importcode': 'Impor kode (dibuat di menu peramban)'
+  's.importcode': 'Impor kode (dibuat di menu peramban)',
+  's.screens': 'Monitor (latar membentang di semuanya)',
+  'o.screens.1': 'Satu layar',
+  'o.screens.auto': 'Otomatis (menurut rasio aspek)',
+  'o.screens.2': '2 layar berdampingan',
+  'o.screens.3': '3 layar berdampingan',
+  'o.screens.4': '4 layar berdampingan',
+  's.lyricscreen': 'Layar lirik',
+  's.sidecard': 'Layar lain menampilkan lagu yang diputar (sampul, judul, kemajuan)'
 });

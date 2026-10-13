@@ -54,6 +54,7 @@ Lyric.i18n.add('sk', {
   'g.lyrics': 'Text piesne',
   'n.lyrics': 'Texty sa vyhľadávajú online (lrclib.net) podľa názvu skladby a interpreta, ktoré hlási Wallpaper Engine. Zapnite „Integrácia médií“ v nastaveniach Wallpaper Engine.',
   'g.audio': 'Zvuk',
+  'g.screens': 'Monitory',
   'g.advanced': 'Pokročilé',
   's.language': 'Jazyk (ponuka a správy)',
   'o.language.auto': 'Automaticky',
@@ -155,5 +156,13 @@ Lyric.i18n.add('sk', {
   's.lyricoffset': 'Úprava časovania (sekundy; zvýšte, ak text prichádza príliš skoro)',
   's.audioenabled': 'Reagovať na zvuk',
   's.audiosensitivity': 'Celková citlivosť',
-  's.importcode': 'Importovať kód (vytvorený v ponuke prehliadača)'
+  's.importcode': 'Importovať kód (vytvorený v ponuke prehliadača)',
+  's.screens': 'Monitory (tapeta roztiahnutá cez ne)',
+  'o.screens.1': 'Jedna obrazovka',
+  'o.screens.auto': 'Automaticky (podľa pomeru strán)',
+  'o.screens.2': '2 obrazovky vedľa seba',
+  'o.screens.3': '3 obrazovky vedľa seba',
+  'o.screens.4': '4 obrazovky vedľa seba',
+  's.lyricscreen': 'Obrazovka s textom',
+  's.sidecard': 'Ostatné obrazovky ukazujú hranú skladbu (obal, názov, priebeh)'
 });

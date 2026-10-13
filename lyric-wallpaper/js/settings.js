@@ -75,6 +75,7 @@
     { id: 'lyrics', label: 'Lyrics',
       note: 'Lyrics are looked up online (lrclib.net) from the song title and artist that Wallpaper Engine reports. Turn on "Media integration" in the Wallpaper Engine settings.' },
     { id: 'audio', label: 'Audio' },
+    { id: 'screens', label: 'Monitors' },
     { id: 'advanced', label: 'Advanced' }
   ];
 
@@ -247,6 +248,20 @@
     // Audio
     { key: 'audioenabled', group: 'audio', label: 'React to audio', type: 'bool', def: true },
     { key: 'audiosensitivity', group: 'audio', label: 'Overall sensitivity', type: 'slider', min: 0.1, max: 3, step: 0.05, def: 1, cond: AUDIO },
+
+    // Monitors
+    { key: 'screens', group: 'screens', label: 'Monitors (wallpaper spanned across them)', type: 'combo', def: '1', fx: 'layout',
+      options: [
+        ['1', 'Single screen'],
+        ['auto', 'Automatic (by aspect ratio)'],
+        ['2', '2 screens side by side'],
+        ['3', '3 screens side by side'],
+        ['4', '4 screens side by side']
+      ] },
+    { key: 'lyricscreen', group: 'screens', label: 'Screen with the lyrics', type: 'slider', min: 1, max: 4, step: 1, def: 1, fx: 'layout',
+      cond: [{ k: 'screens', ne: '1' }] },
+    { key: 'sidecard', group: 'screens', label: 'The other screens show the song playing (cover, title, progress)', type: 'bool', def: true,
+      cond: [{ k: 'screens', ne: '1' }] },
 
     // Advanced (WE only: in the browser, importing lives in the menu)
     { key: 'importcode', group: 'advanced', label: 'Import code (generated in the browser menu)', type: 'textinput', def: '', menu: false }

@@ -54,6 +54,7 @@ Lyric.i18n.add('ko', {
   'g.lyrics': '가사',
   'n.lyrics': '가사는 Wallpaper Engine이 알려 주는 노래 제목과 아티스트로 온라인(lrclib.net)에서 찾습니다. Wallpaper Engine 설정에서 "미디어 통합"을 켜세요.',
   'g.audio': '오디오',
+  'g.screens': '모니터',
   'g.advanced': '고급',
   's.language': '언어 (메뉴와 메시지)',
   'o.language.auto': '자동',
@@ -155,5 +156,13 @@ Lyric.i18n.add('ko', {
   's.lyricoffset': '타이밍 조정 (초; 가사가 너무 일찍 나오면 올리세요)',
   's.audioenabled': '오디오에 반응',
   's.audiosensitivity': '전체 감도',
-  's.importcode': '코드 가져오기 (브라우저 메뉴에서 생성)'
+  's.importcode': '코드 가져오기 (브라우저 메뉴에서 생성)',
+  's.screens': '모니터 (배경화면을 걸쳐 늘림)',
+  'o.screens.1': '화면 하나',
+  'o.screens.auto': '자동 (화면 비율 기준)',
+  'o.screens.2': '나란히 2개 화면',
+  'o.screens.3': '나란히 3개 화면',
+  'o.screens.4': '나란히 4개 화면',
+  's.lyricscreen': '가사를 표시할 화면',
+  's.sidecard': '다른 화면에 재생 중인 곡 표시 (커버, 제목, 진행)'
 });

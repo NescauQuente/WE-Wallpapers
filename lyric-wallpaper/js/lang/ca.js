@@ -54,6 +54,7 @@ Lyric.i18n.add('ca', {
   'g.lyrics': 'Lletres',
   'n.lyrics': 'Les lletres es cerquen en línia (lrclib.net) a partir del títol i l’artista de la cançó que indica el Wallpaper Engine. Activa «Integració multimèdia» a la configuració del Wallpaper Engine.',
   'g.audio': 'Àudio',
+  'g.screens': 'Monitors',
   'g.advanced': 'Avançat',
   's.language': 'Llengua (menú i missatges)',
   'o.language.auto': 'Automàtica',
@@ -155,5 +156,13 @@ Lyric.i18n.add('ca', {
   's.lyricoffset': 'Ajust de sincronia (segons; apuja’l si la lletra arriba massa aviat)',
   's.audioenabled': 'Reaccionar a l’àudio',
   's.audiosensitivity': 'Sensibilitat general',
-  's.importcode': 'Importar codi (generat al menú del navegador)'
+  's.importcode': 'Importar codi (generat al menú del navegador)',
+  's.screens': 'Monitors (fons estès per tots ells)',
+  'o.screens.1': 'Una sola pantalla',
+  'o.screens.auto': 'Automàtic (segons la proporció)',
+  'o.screens.2': '2 pantalles una al costat de l’altra',
+  'o.screens.3': '3 pantalles una al costat de l’altra',
+  'o.screens.4': '4 pantalles una al costat de l’altra',
+  's.lyricscreen': 'Pantalla de la lletra',
+  's.sidecard': 'Les altres pantalles mostren la cançó que sona (portada, títol, progrés)'
 });

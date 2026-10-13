@@ -54,6 +54,7 @@ Lyric.i18n.add('tr', {
   'g.lyrics': 'Şarkı sözleri',
   'n.lyrics': 'Şarkı sözleri, Wallpaper Engine’in bildirdiği şarkı adı ve sanatçıya göre çevrimiçi (lrclib.net) aranır. Wallpaper Engine ayarlarında "Medya entegrasyonu"nu açın.',
   'g.audio': 'Ses',
+  'g.screens': 'Monitörler',
   'g.advanced': 'Gelişmiş',
   's.language': 'Dil (menü ve mesajlar)',
   'o.language.auto': 'Otomatik',
@@ -155,5 +156,13 @@ Lyric.i18n.add('tr', {
   's.lyricoffset': 'Zamanlama ayarı (saniye; sözler çok erken geliyorsa artırın)',
   's.audioenabled': 'Sese tepki ver',
   's.audiosensitivity': 'Genel hassasiyet',
-  's.importcode': 'Kodu içe aktar (tarayıcı menüsünde oluşturulur)'
+  's.importcode': 'Kodu içe aktar (tarayıcı menüsünde oluşturulur)',
+  's.screens': 'Monitörler (duvar kâğıdı hepsine yayılır)',
+  'o.screens.1': 'Tek ekran',
+  'o.screens.auto': 'Otomatik (en boy oranına göre)',
+  'o.screens.2': 'Yan yana 2 ekran',
+  'o.screens.3': 'Yan yana 3 ekran',
+  'o.screens.4': 'Yan yana 4 ekran',
+  's.lyricscreen': 'Şarkı sözlerinin ekranı',
+  's.sidecard': 'Diğer ekranlar çalan şarkıyı gösterir (kapak, başlık, ilerleme)'
 });

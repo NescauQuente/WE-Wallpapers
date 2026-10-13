@@ -75,6 +75,8 @@
     'uniform vec4 u_rib[' + (RIB_N * 4) + '];',
     'uniform int u_trans;',        // transition style (0 burn … 6 glitch)
     'uniform float u_tseed;',      // per transition: a different shape each time
+    'uniform vec2 u_vc;',           // the lyrics screen: its center (q units) …
+    'uniform float u_vasp;',        // … and its width/height (0 = the whole canvas)
     'uniform vec4 u_viz;',          // visualizer: style (0 off, 1 bars, 2 wave, 3 ring), size
     'uniform float u_bands[' + VIZ_N + '];',
     'uniform float u_peaks[' + VIZ_N + '];',
@@ -507,17 +509,21 @@
     '  float e = 0.0, edgeK = 1.0, row = 0.0;',
     '  vec2 dq = vec2(0.0);',
     '  if (mid) {',
-    '    float rr = length(q * vec2(0.75, 1.0)) / length(vec2(asp * 0.375, 0.5));',
+    // Distances from the lyrics screen's center, 1 at the farthest edge
+    '    vec2 qc = q - u_vc;',
+    '    float fx = max(abs(-asp * 0.5 - u_vc.x), abs(asp * 0.5 - u_vc.x));',
+    '    float fd = length(vec2(fx * 0.75, 0.5));',
+    '    float rr = length(qc * vec2(0.75, 1.0)) / fd;',
     '    float sd = u_tseed, field;',
     '    if (u_trans == 1) {',
     // Ripples: a round front with a wobbling edge
-    '      float an = atan(q.y, q.x);',
+    '      float an = atan(qc.y, qc.x);',
     '      field = rr * 0.95 + 0.012 * sin(an * 3.0 + sd * 6.28) + 0.008 * sin(an * 7.0 - sd * 4.0) + 0.018 * sin(rr * 40.0 - u_time * 6.0);',
     '    } else if (u_trans == 2) {',
     // Pixels: square blocks in a random order, a little from the center out
     '      float bs = 1.0 / 22.0;',
     '      vec2 cell = floor(q / bs);',
-    '      float cr = length((cell + 0.5) * bs * vec2(0.75, 1.0)) / length(vec2(asp * 0.375, 0.5));',
+    '      float cr = length(((cell + 0.5) * bs - u_vc) * vec2(0.75, 1.0)) / fd;',
     '      field = 0.55 * hash(cell + sd * 37.0) + 0.45 * clamp(cr, 0.0, 1.0);',
     '    } else if (u_trans == 3) {',
     // Shattered glass: Voronoi shards, each its own moment
@@ -532,7 +538,7 @@
     '        }',
     '      }',
     '      vec2 cc = (best + 0.5) / 5.0;',
-    '      field = 0.5 * hash(best * 1.7 + sd) + 0.5 * clamp(length(cc * vec2(0.75, 1.0)) / length(vec2(asp * 0.375, 0.5)), 0.0, 1.0);',
+    '      field = 0.5 * hash(best * 1.7 + sd) + 0.5 * clamp(length((cc - u_vc) * vec2(0.75, 1.0)) / fd, 0.0, 1.0);',
     '      edgeK = smoothstep(0.0, 0.05, sqrt(d2) - sqrt(d1));',
     '    } else if (u_trans == 4) {',
     // Sweep of light: a slanted curtain crossing the screen
@@ -554,10 +560,10 @@
     '    e = field - mix(-0.06, 1.06, 1.0 - pow(1.0 - s, 1.3));',
     '    float near = exp(-max(e, 0.0) / 0.06);',
     '    if (u_trans == 1) {',
-    '      dq = normalize(q + 0.0001) * sin(e * 90.0 - u_time * 4.0) * 0.012 * near;',
+    '      dq = normalize(qc + 0.0001) * sin(e * 90.0 - u_time * 4.0) * 0.012 * near;',
     '    } else if (u_trans == 5) {',
     '      float ang = 2.4 * s * (1.0 - smoothstep(0.0, 1.3, rr)), co = cos(ang), si = sin(ang);',
-    '      dq = mat2(co, -si, si, co) * q * (1.0 - 0.3 * s) - q;',
+    '      dq = mat2(co, -si, si, co) * qc * (1.0 - 0.3 * s) - qc;',
     '    } else if (u_trans == 6) {',
     '      dq.x = (hash(vec2(row, floor(u_time * 14.0))) - 0.5) * 0.09 * near;',
     '    }',
@@ -570,7 +576,7 @@
     '  }',
     '  if (s > 0.001) {',
     '    show = showColor(q * (1.0 + 0.10 * (1.0 - s)), asp);',
-    '    if (u_viz.x > 0.5) show += visualizer(q, asp) * smoothstep(0.5, 1.0, s);',
+    '    if (u_viz.x > 0.5) show += visualizer(q - u_vc, u_vasp > 0.0 ? u_vasp : asp) * smoothstep(0.5, 1.0, s);',
     '    show = vec3(knee(show.r), knee(show.g), knee(show.b));',
     '  }',
     '  vec3 rgb;',
@@ -692,7 +698,7 @@
   }
 
   var UNIFORMS = ['u_res', 'u_time', 'u_itime', 'u_idle', 'u_style', 'u_show', 'u_colA', 'u_colB',
-    'u_base', 'u_audio', 'u_parts', 'u_coverOn', 'u_cover', 'u_coverSize', 'u_rib', 'u_viz', 'u_bands', 'u_peaks', 'u_trans', 'u_tseed'];
+    'u_base', 'u_audio', 'u_parts', 'u_coverOn', 'u_cover', 'u_coverSize', 'u_rib', 'u_viz', 'u_bands', 'u_peaks', 'u_trans', 'u_tseed', 'u_vc', 'u_vasp'];
 
   function compile(type, src) {
     var sh = gl.createShader(type);
@@ -842,6 +848,8 @@
     gl.uniform4f(U.u_viz, VIZ[p.viz] || 0, +p.vizSize || 1, 0, 0);
     gl.uniform1i(U.u_trans, TRANS[p.trans] || 0);
     gl.uniform1f(U.u_tseed, +p.tseed || 0);
+    gl.uniform2f(U.u_vc, +p.vc || 0, 0);
+    gl.uniform1f(U.u_vasp, +p.vasp || 0);
     if (VIZ[p.viz] && p.bands) gl.uniform1fv(U.u_bands, p.bands);
     if (VIZ[p.viz] && p.peaks) gl.uniform1fv(U.u_peaks, p.peaks);
     gl.activeTexture(gl.TEXTURE0);

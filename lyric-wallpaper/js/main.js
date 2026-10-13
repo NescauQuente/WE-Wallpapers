@@ -143,11 +143,30 @@
     W = Math.max(1, Math.round(Math.max(1, window.innerWidth) * dpr * q));
     H = Math.max(1, Math.round(Math.max(1, window.innerHeight) * dpr * q));
     G.resize(W, H);
+    screens();
     dirty = true;
     // A new size clears the canvas: paused (frames stopped, maybe still in
     // sight), draw it again at once
     if (paused && !manual) draw();
     wake();
+  }
+
+  // A wallpaper spanned across monitors ('screens'): the stage on the screen
+  // 'lyricscreen', a "now playing" panel on the others, and the background's
+  // center (the transition, the round visualizers) on the lyrics screen
+  function screenCount(cw, ch) {
+    if (cfg.screens === 'auto') return util.clamp(Math.round(cw / ch / (16 / 9)), 1, 4);
+    return util.clamp(parseInt(cfg.screens, 10) || 1, 1, 4);
+  }
+
+  function screens() {
+    var cw = Math.max(1, window.innerWidth), ch = Math.max(1, window.innerHeight);
+    var n = screenCount(cw, ch), rw = cw / n, list = [];
+    for (var i = 0; i < n; i++) list.push({ x0: i * rw, w: rw });
+    var k = util.clamp(Math.round(cfg.lyricscreen) - 1, 0, n - 1);
+    stage.setScreens(list, k);
+    gp.vc = ((k + 0.5) * rw / cw * W - W / 2) / H;
+    gp.vasp = rw / cw * W / H;
   }
 
   // Canvas 2D on a fresh canvas (one that held a WebGL context cannot give a
@@ -559,7 +578,7 @@
   var gp = {     // background frame (reused)
     time: 0, idle: 'win11', idleMotion: false, show: 0, style: 'aurora', colA: live.A, colB: live.B, colBg: live.bg,
     bass: 0, volume: 0, beat: 0, reactive: 1, particles: true, hasCover: false,
-    trans: 'burn', tseed: 0, viz: 'off', vizSize: 1, bands: new Float32Array(32), peaks: new Float32Array(32)
+    trans: 'burn', tseed: 0, vc: 0, vasp: 0, viz: 'off', vizSize: 1, bands: new Float32Array(32), peaks: new Float32Array(32)
   };
 
   function tick(dt) {
@@ -606,7 +625,9 @@
     // No line to sing (instrumental, before the first line, no lyrics, a show
     // of sound alone): the visualizer takes the stage ('vizsmart')
     var singing = sung && (pos - ln.t < 8 || ln.end - ln.t < 10) && !!songTitle();
-    var boostAim = cfg.vizsmart && show.on && !singing ? VIZ_BOOST : 1;
+    // (not the styles along the bottom while the big song card is up: they would cover it)
+    var bottomViz = /^(bars|wave|mirror|led|silk)$/.test(cfg.visualizer);
+    var boostAim = cfg.vizsmart && show.on && !singing && !(bottomViz && stage.heroOn()) ? VIZ_BOOST : 1;
     vizBoost += (boostAim - vizBoost) * Math.min(1, dt * 1.5);
 
     ss.show = show.eased;

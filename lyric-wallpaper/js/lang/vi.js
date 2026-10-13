@@ -54,6 +54,7 @@ Lyric.i18n.add('vi', {
   'g.lyrics': 'Lời bài hát',
   'n.lyrics': 'Lời bài hát được tìm trực tuyến (lrclib.net) theo tên bài hát và nghệ sĩ mà Wallpaper Engine cung cấp. Hãy bật "Tích hợp đa phương tiện" trong cài đặt Wallpaper Engine.',
   'g.audio': 'Âm thanh',
+  'g.screens': 'Màn hình',
   'g.advanced': 'Nâng cao',
   's.language': 'Ngôn ngữ (menu và thông báo)',
   'o.language.auto': 'Tự động',
@@ -155,5 +156,13 @@ Lyric.i18n.add('vi', {
   's.lyricoffset': 'Chỉnh thời gian (giây; tăng lên nếu lời hiện quá sớm)',
   's.audioenabled': 'Phản ứng với âm thanh',
   's.audiosensitivity': 'Độ nhạy chung',
-  's.importcode': 'Nhập mã (tạo trong menu trình duyệt)'
+  's.importcode': 'Nhập mã (tạo trong menu trình duyệt)',
+  's.screens': 'Màn hình (hình nền trải qua tất cả)',
+  'o.screens.1': 'Một màn hình',
+  'o.screens.auto': 'Tự động (theo tỷ lệ khung hình)',
+  'o.screens.2': '2 màn hình cạnh nhau',
+  'o.screens.3': '3 màn hình cạnh nhau',
+  'o.screens.4': '4 màn hình cạnh nhau',
+  's.lyricscreen': 'Màn hình hiển thị lời',
+  's.sidecard': 'Các màn hình khác hiện bài đang phát (bìa, tên bài, tiến trình)'
 });

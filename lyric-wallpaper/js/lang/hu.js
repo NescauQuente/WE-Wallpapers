@@ -54,6 +54,7 @@ Lyric.i18n.add('hu', {
   'g.lyrics': 'Dalszöveg',
   'n.lyrics': 'A dalszöveget online keressük meg (lrclib.net) a Wallpaper Engine által jelzett dalcím és előadó alapján. Kapcsold be a „Médiaintegráció” lehetőséget a Wallpaper Engine beállításaiban.',
   'g.audio': 'Hang',
+  'g.screens': 'Monitorok',
   'g.advanced': 'Speciális',
   's.language': 'Nyelv (menü és üzenetek)',
   'o.language.auto': 'Automatikus',
@@ -155,5 +156,13 @@ Lyric.i18n.add('hu', {
   's.lyricoffset': 'Időzítés igazítása (másodperc; növeld, ha a szöveg túl korán jön)',
   's.audioenabled': 'Reagálás a hangra',
   's.audiosensitivity': 'Általános érzékenység',
-  's.importcode': 'Kód importálása (a böngészőmenüben készült)'
+  's.importcode': 'Kód importálása (a böngészőmenüben készült)',
+  's.screens': 'Monitorok (a háttér rájuk feszítve)',
+  'o.screens.1': 'Egy képernyő',
+  'o.screens.auto': 'Automatikus (képarány alapján)',
+  'o.screens.2': '2 képernyő egymás mellett',
+  'o.screens.3': '3 képernyő egymás mellett',
+  'o.screens.4': '4 képernyő egymás mellett',
+  's.lyricscreen': 'A dalszöveg képernyője',
+  's.sidecard': 'A többi képernyő a szóló dalt mutatja (borító, cím, haladás)'
 });
