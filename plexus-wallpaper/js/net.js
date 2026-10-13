@@ -161,6 +161,7 @@
     var stretch = !flat && lastNear === lastNear && zN !== lastNear ? zr / (zF - lastNear) : 1;
     lastNear = zN;
     for (var i = 0; i < N; i++) {
+      if (!isFinite(X[i] + Y[i] + Z[i] + IX[i] + IY[i] + IZ[i])) heal(i);
       if (LOCK[i]) continue;
       if (stretch !== 1) {
         var z0 = Z[i];
@@ -227,6 +228,18 @@
       if (Y[i] > hy) Y[i] -= 2 * hy;
       else if (Y[i] < -hy) Y[i] += 2 * hy;
     }
+  }
+
+  // A node whose position went NaN or infinite (a bug somewhere) comes back
+  // in somewhere else instead of being lost for good (a formation holding it
+  // pulls it back to its place)
+  function heal(i) {
+    IX[i] = IY[i] = IZ[i] = PX[i] = PY[i] = PZ[i] = 0;
+    place(i, randomDepth());
+    pickDrift(i);
+    VX[i] = TX[i];
+    VY[i] = TY[i];
+    VZ[i] = TZ[i];
   }
 
   // Screen position, scale and visibility of every node
@@ -358,7 +371,9 @@
     for (i = 0; i < N; i++) {
       if (LOCK[i]) continue;
       var dx = x - SX[i], dy = y - SY[i], d2 = dx * dx + dy * dy;
-      if (d2 > R2) continue;
+      // (written so a node with a broken position stays out: the separation
+      // below would spread its NaN to every node the cursor touches)
+      if (!(d2 <= R2)) continue;
       if (nn < nearCursor.length) nearCursor[nn++] = i;
       if (d2 < 1) continue;
       var d = Math.sqrt(d2), t = 1 - d / R, f;
@@ -398,8 +413,10 @@
     var R2 = R * R, core = 26 * view.unit;
     for (var i = 0; i < N; i++) {
       var dx = x - SX[i], dy = y - SY[i], d2 = dx * dx + dy * dy;
-      if (d2 > R2) continue;
-      var d = Math.sqrt(d2) + 0.001, t = 1 - d / R;
+      if (!(d2 <= R2)) continue;
+      // t from the real distance: with the epsilon in it, a node right on the
+      // edge got t < 0 and a NaN pull (Math.sqrt), and vanished
+      var dd = Math.sqrt(d2), d = dd + 0.001, t = 1 - dd / R;
       var fr = pull * Math.sqrt(t);
       // A small core holds the nodes apart instead of a single point
       if (d < core) fr *= d / core - 0.7;

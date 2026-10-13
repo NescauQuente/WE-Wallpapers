@@ -193,6 +193,25 @@
   check('a explosão espalha os nós', near(sz.H * 0.12) < n1 / 2, near(sz.H * 0.12));
   document.dispatchEvent(new MouseEvent('mouseleave'));
 
+  // Um nó bem na borda do redemoinho não vira NaN; um nó quebrado não se
+  // espalha pelo cursor e volta para a rede
+  A = net.a();
+  var free2 = [];
+  for (k = 0; k < net.n() && free2.length < 2; k++) if (!A.LOCK[k]) free2.push(k);
+  var na = free2[0], nb = free2[1], vR = 300;
+  A.IX[na] = A.IY[na] = 0;
+  net.vortex(A.SX[na] + vR - 0.0005, A.SY[na], vR, 1500, 950, 1 / 60);
+  check('borda da singularidade: o nó continua válido', isFinite(A.IX[na]) && isFinite(A.IY[na]), { IX: A.IX[na], IY: A.IY[na] });
+  A.X[na] = A.SX[na] = NaN;
+  A.SX[nb] = sz.W / 2 + 20;
+  A.SY[nb] = sz.H / 2;
+  A.IX[nb] = A.IY[nb] = 0;
+  net.cursor(sz.W / 2, sz.H / 2, 200 * sz.unit, 140 * sz.unit, 1 / 60);
+  check('um nó quebrado não se espalha pelo cursor', isFinite(A.IX[nb]) && isFinite(A.IY[nb]), { IX: A.IX[nb], IY: A.IY[nb] });
+  net.move(1 / 60, 1, 0);
+  check('o nó quebrado volta para a rede', isFinite(A.X[na]) && isFinite(A.Y[na]) && isFinite(A.Z[na]), { X: A.X[na], Y: A.Y[na], Z: A.Z[na] });
+  run(1);
+
   // Formações
   var kinds = S.shapes.KINDS.concat(['clock']), formed = [];
   kinds.forEach(function (kind) {
