@@ -151,6 +151,17 @@
     { key: 'soundtime', group: 'show', label: 'Seconds of sound with no song reported before the show starts', type: 'slider', min: 3, max: 60, step: 1, def: 10,
       cond: [{ k: 'trigger', ne: 'media' }, { k: 'trigger', ne: 'always' }, { k: 'trigger', ne: 'never' }] },
     { key: 'transition', group: 'show', label: 'Transition (seconds)', type: 'slider', min: 0.5, max: 6, step: 0.1, def: 2.5 },
+    { key: 'transfx', group: 'show', label: 'Transition effect', type: 'combo', def: 'burn', look: true,
+      options: [
+        ['burn', 'Burning paper'],
+        ['ripple', 'Ripples'],
+        ['pixels', 'Pixels'],
+        ['glass', 'Shattered glass'],
+        ['sweep', 'Sweep of light'],
+        ['vortex', 'Vortex'],
+        ['glitch', 'Glitch'],
+        ['random', 'Random (a different one each time)']
+      ] },
     { key: 'returndelay', group: 'show', label: 'Back to the wallpaper after a pause of (seconds)', type: 'slider', min: 2, max: 60, step: 1, def: 8 },
     { key: 'bgstyle', group: 'show', label: 'Background', type: 'combo', def: 'aurora', look: true,
       options: [

@@ -663,6 +663,17 @@
     check('…and no media integration advice (it is on)', ST.state().message !== 'show.noMedia', ST.state());
     run(2);
     check('smart visualizer: bigger with no line to sing', D.gfxParams().vizSize > D.cfg.vizsize * 1.5, D.gfxParams().vizSize);
+    // The transition style: 'random' picks a real style for each transition, never the same twice in a row
+    app.setValue('transfx', 'random');
+    var styles = ['burn', 'ripple', 'pixels', 'glass', 'sweep', 'vortex', 'glitch'], seen = [];
+    for (var ti = 0; ti < 6; ti++) {
+      sound(ti % 2 === 0 ? false : true);
+      run(ti % 2 === 0 ? D.cfg.returndelay + 0.5 : D.cfg.soundtime + 0.5);
+      seen.push(D.transition().style);
+    }
+    check('transition "random": a real style each time, never the same twice in a row',
+      seen.every(function (x) { return styles.indexOf(x) >= 0; }) && seen.every(function (x, i) { return !i || x !== seen[i - 1]; }) && D.gfxParams().trans === seen[seen.length - 1], seen);
+    app.setValue('transfx', 'burn');
     var vb = D.gfxParams ? D.gfxParams().bands : null;
     check('visualizer: the spectrum reaches the background', !!vb && vb.length === 32 && Array.prototype.some.call(vb, function (v) { return v > 0.05; }), vb && Array.prototype.slice.call(vb, 0, 8));
     play(true);

@@ -27,6 +27,7 @@
   var IDLE = { win11: 0, win11dark: 1, win10: 2, image: 3 };
   var STYLE = { aurora: 0, spotlights: 1, cover: 2, minimal: 3 };
   var VIZ = { off: 0, bars: 1, wave: 2, ring: 3, mirror: 4, led: 5, radial: 6, silk: 7, edges: 8, pulse: 9 };
+  var TRANS = { burn: 0, ripple: 1, pixels: 2, glass: 3, sweep: 4, vortex: 5, glitch: 6 };
   var VIZ_N = 32;     // visualizer bands (p.bands: a Float32Array of this length, 0–1)
 
   // Ribbons of the 'win11' looks, back to front, in screen units (height = 1,
@@ -72,6 +73,8 @@
     'uniform sampler2D u_cover;',
     'uniform vec2 u_coverSize;',
     'uniform vec4 u_rib[' + (RIB_N * 4) + '];',
+    'uniform int u_trans;',        // transition style (0 burn … 6 glitch)
+    'uniform float u_tseed;',      // per transition: a different shape each time
     'uniform vec4 u_viz;',          // visualizer: style (0 off, 1 bars, 2 wave, 3 ring), size
     'uniform float u_bands[' + VIZ_N + '];',
     'uniform float u_peaks[' + VIZ_N + '];',
@@ -495,11 +498,73 @@
     '  float asp = u_res.x * px;',
     '  float s = u_show;',
     '  vec3 idle = vec3(0.0);',
-    '  float ia = u_idle == 3 ? 0.0 : 1.0;',   // idle alpha: the user's image shows through
+    '  float ia = u_idle == 3 ? 0.0 : 1.0;',
     '  vec3 show = vec3(0.0);',
+    // The transition front: 'field' (0–1) is the order in which the pixels turn
+    // into the show, one recipe per style ('transfx'); e = where the front is
+    // (e < 0: already the show). Some styles also bend the wallpaper near it
+    '  bool mid = s > 0.001 && s < 0.999;',
+    '  float e = 0.0, edgeK = 1.0, row = 0.0;',
+    '  vec2 dq = vec2(0.0);',
+    '  if (mid) {',
+    '    float rr = length(q * vec2(0.75, 1.0)) / length(vec2(asp * 0.375, 0.5));',
+    '    float sd = u_tseed, field;',
+    '    if (u_trans == 1) {',
+    // Ripples: a round front with a wobbling edge
+    '      float an = atan(q.y, q.x);',
+    '      field = rr * 0.95 + 0.012 * sin(an * 3.0 + sd * 6.28) + 0.008 * sin(an * 7.0 - sd * 4.0) + 0.018 * sin(rr * 40.0 - u_time * 6.0);',
+    '    } else if (u_trans == 2) {',
+    // Pixels: square blocks in a random order, a little from the center out
+    '      float bs = 1.0 / 22.0;',
+    '      vec2 cell = floor(q / bs);',
+    '      float cr = length((cell + 0.5) * bs * vec2(0.75, 1.0)) / length(vec2(asp * 0.375, 0.5));',
+    '      field = 0.55 * hash(cell + sd * 37.0) + 0.45 * clamp(cr, 0.0, 1.0);',
+    '    } else if (u_trans == 3) {',
+    // Shattered glass: Voronoi shards, each its own moment
+    '      vec2 g = q * 5.0, ip = floor(g), fp = fract(g), best = vec2(0.0);',
+    '      float d1 = 8.0, d2 = 8.0;',
+    '      for (int j = -1; j <= 1; j++) {',
+    '        for (int i = -1; i <= 1; i++) {',
+    '          vec2 o2 = vec2(float(i), float(j)), c = ip + o2;',
+    '          vec2 pt = o2 + vec2(hash(c + sd), hash(c + sd + 17.3)) * 0.9 + 0.05 - fp;',
+    '          float d = dot(pt, pt);',
+    '          if (d < d1) { d2 = d1; d1 = d; best = c; } else if (d < d2) { d2 = d; }',
+    '        }',
+    '      }',
+    '      vec2 cc = (best + 0.5) / 5.0;',
+    '      field = 0.5 * hash(best * 1.7 + sd) + 0.5 * clamp(length(cc * vec2(0.75, 1.0)) / length(vec2(asp * 0.375, 0.5)), 0.0, 1.0);',
+    '      edgeK = smoothstep(0.0, 0.05, sqrt(d2) - sqrt(d1));',
+    '    } else if (u_trans == 4) {',
+    // Sweep of light: a slanted curtain crossing the screen
+    '      vec2 dir = normalize(vec2(sd < 0.5 ? 1.0 : -1.0, 0.45));',
+    '      float span = abs(dir.x) * asp * 0.5 + abs(dir.y) * 0.5;',
+    '      field = dot(q, dir) / span * 0.5 + 0.5 + 0.03 * (noise(q * 6.0 + sd * 9.0) - 0.5);',
+    '    } else if (u_trans == 5) {',
+    // Vortex: it opens from the center while the wallpaper twists into it
+    '      field = rr * 0.85 + 0.15 * fbm(q * 3.0 + sd * 5.0, 2);',
+    '    } else if (u_trans == 6) {',
+    // Glitch: horizontal slices, each flipping at its own time, left to right
+    '      row = floor((q.y + 0.5) * 34.0);',
+    '      field = 0.62 * hash(vec2(row, sd * 13.0)) + 0.38 * clamp(q.x / asp + 0.5, 0.0, 1.0);',
+    '    } else {',
+    // Burning paper: the distance from the center plus a drifting noise
+    '      float n = fbm(q * 2.3 + vec2(11.0 + u_time * 0.13, u_time * 0.09), 3);',
+    '      field = 0.42 * clamp((n - 0.5) * 1.8 + 0.5, 0.0, 1.0) + 0.58 * rr;',
+    '    }',
+    '    e = field - mix(-0.06, 1.06, 1.0 - pow(1.0 - s, 1.3));',
+    '    float near = exp(-max(e, 0.0) / 0.06);',
+    '    if (u_trans == 1) {',
+    '      dq = normalize(q + 0.0001) * sin(e * 90.0 - u_time * 4.0) * 0.012 * near;',
+    '    } else if (u_trans == 5) {',
+    '      float ang = 2.4 * s * (1.0 - smoothstep(0.0, 1.3, rr)), co = cos(ang), si = sin(ang);',
+    '      dq = mat2(co, -si, si, co) * q * (1.0 - 0.3 * s) - q;',
+    '    } else if (u_trans == 6) {',
+    '      dq.x = (hash(vec2(row, floor(u_time * 14.0))) - 0.5) * 0.09 * near;',
+    '    }',
+    '  }',
     '  if (s < 0.999 && u_idle != 3) {',
     // While it dissolves, the idle look zooms in and softens
-    '    vec2 qi = q / (1.0 + 0.07 * s);',
+    '    vec2 qi = (q + dq) / (1.0 + 0.07 * s);',
     '    if (u_idle == 2) idle = idleShafts(qi, asp);',
     '    else idle = idleRibbons(qi, asp, u_idle == 1, s * 0.05);',
     '  }',
@@ -517,19 +582,16 @@
     '    rgb = show;',
     '    a = 1.0;',
     '  } else {',
-    // The front: the distance from the center plus a drifting noise (each
-    // transition has its own shape), swept by s. A thin bright line in the
-    // album color, a glow inside, the idle tinted ahead of it.
-    '    float rr = length(q * vec2(0.75, 1.0)) / length(vec2(asp * 0.375, 0.5));',
-    '    float n = fbm(q * 2.3 + vec2(11.0 + u_time * 0.13, u_time * 0.09), 3);',
-    '    float field = 0.42 * clamp((n - 0.5) * 1.8 + 0.5, 0.0, 1.0) + 0.58 * rr;',
-    '    float e = field - mix(-0.06, 1.06, 1.0 - pow(1.0 - s, 1.3));',
+    // A thin bright line in the album color on the front, a glow inside, the
+    // idle tinted ahead of it (wider for the sweep, on the shard edges for glass)
     '    float m = 1.0 - smoothstep(-0.01, 0.01, e);',
     '    float fade = smoothstep(0.0, 0.08, s) * (1.0 - smoothstep(0.92, 1.0, s));',
-    '    float line = exp(-e * e / 0.00008) * fade;',
+    '    float line = exp(-e * e / (u_trans == 4 ? 0.0007 : 0.00008)) * fade;',
+    '    if (u_trans == 3) line = max(line, (1.0 - edgeK) * exp(-abs(e) / 0.07) * fade * 0.9);',
     '    float inner = exp(min(e, 0.0) / 0.05) * m * fade;',
-    '    float ahead = exp(-max(e, 0.0) / 0.03) * (1.0 - m) * fade;',
+    '    float ahead = exp(-max(e, 0.0) / (u_trans == 4 ? 0.09 : 0.03)) * (1.0 - m) * fade;',
     '    vec3 hot = mix(u_colA, vec3(1.0), 0.35);',
+    '    if (u_trans == 6) hot = mix(vec3(0.2, 1.0, 1.0), vec3(1.0, 0.25, 0.9), hash(vec2(row, 3.0)));',
     '    idle = mix(idle, mix(u_colA, idle, 0.5), ahead * 0.45);',
     '    rgb = idle * ia * (1.0 - m) + (show + u_colA * inner * 0.3) * m;',
     '    a = ia * (1.0 - m) + m;',
@@ -630,7 +692,7 @@
   }
 
   var UNIFORMS = ['u_res', 'u_time', 'u_itime', 'u_idle', 'u_style', 'u_show', 'u_colA', 'u_colB',
-    'u_base', 'u_audio', 'u_parts', 'u_coverOn', 'u_cover', 'u_coverSize', 'u_rib', 'u_viz', 'u_bands', 'u_peaks'];
+    'u_base', 'u_audio', 'u_parts', 'u_coverOn', 'u_cover', 'u_coverSize', 'u_rib', 'u_viz', 'u_bands', 'u_peaks', 'u_trans', 'u_tseed'];
 
   function compile(type, src) {
     var sh = gl.createShader(type);
@@ -778,6 +840,8 @@
     gl.uniform1f(U.u_parts, p.particles ? 1 : 0);
     gl.uniform1f(U.u_coverOn, p.hasCover && cover ? 1 : 0);
     gl.uniform4f(U.u_viz, VIZ[p.viz] || 0, +p.vizSize || 1, 0, 0);
+    gl.uniform1i(U.u_trans, TRANS[p.trans] || 0);
+    gl.uniform1f(U.u_tseed, +p.tseed || 0);
     if (VIZ[p.viz] && p.bands) gl.uniform1fv(U.u_bands, p.bands);
     if (VIZ[p.viz] && p.peaks) gl.uniform1fv(U.u_peaks, p.peaks);
     gl.activeTexture(gl.TEXTURE0);

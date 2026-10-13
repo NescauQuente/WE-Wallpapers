@@ -402,7 +402,23 @@
     return (show.on && show.source === 'sound' ? music.silence <= 0 : music.time >= cfg.soundtime) ? 'sound' : '';
   }
 
+  // The transition's look ('transfx'): 'random' picks another style each time
+  var TRANS_STYLES = ['burn', 'ripple', 'pixels', 'glass', 'sweep', 'vortex', 'glitch'];
+  var trans = { style: 'burn', seed: 0 };
+
+  function newTransition() {
+    var t = cfg.transfx;
+    if (t === 'random') {
+      var pick;
+      do { pick = TRANS_STYLES[(Math.random() * TRANS_STYLES.length) | 0]; } while (pick === trans.style);
+      t = pick;
+    }
+    trans.style = TRANS_STYLES.indexOf(t) >= 0 ? t : 'burn';
+    trans.seed = Math.random();
+  }
+
   function updateShow(dt) {
+    var wasOn = show.on;
     var src = triggerNow();
     if (src) {
       show.on = true;
@@ -421,6 +437,7 @@
         show.source = '';
       }
     }
+    if (show.on !== wasOn) newTransition();
     var step = dt / Math.max(0.1, cfg.transition);
     show.amount = show.on ? Math.min(1, show.amount + step) : Math.max(0, show.amount - step);
     show.eased = util.ease(show.amount);
@@ -542,7 +559,7 @@
   var gp = {     // background frame (reused)
     time: 0, idle: 'win11', idleMotion: false, show: 0, style: 'aurora', colA: live.A, colB: live.B, colBg: live.bg,
     bass: 0, volume: 0, beat: 0, reactive: 1, particles: true, hasCover: false,
-    viz: 'off', vizSize: 1, bands: new Float32Array(32), peaks: new Float32Array(32)
+    trans: 'burn', tseed: 0, viz: 'off', vizSize: 1, bands: new Float32Array(32), peaks: new Float32Array(32)
   };
 
   function tick(dt) {
@@ -629,6 +646,8 @@
     // The chorus: the background reacts harder ('chorus')
     if (cfg.chorus && sung && ln.chorus) gp.reactive *= 1.35;
     gp.particles = cfg.particles;
+    gp.trans = cfg.transfx === 'random' ? trans.style : cfg.transfx;
+    gp.tseed = trans.seed;
     // The visualizer: the 64 audio bands, two by two (nothing without audio)
     gp.viz = on ? cfg.visualizer : 'off';
     gp.vizSize = cfg.vizsize * vizBoost;
@@ -1033,6 +1052,7 @@
     },
     // What shows now
     gfxParams: function () { return gp; },
+    transition: function () { return trans; },
     state: function () {
       var L = lyrics.state;
       return {
