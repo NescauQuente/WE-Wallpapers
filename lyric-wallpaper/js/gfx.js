@@ -26,7 +26,7 @@
 
   var IDLE = { win11: 0, win11dark: 1, win10: 2, image: 3 };
   var STYLE = { aurora: 0, spotlights: 1, cover: 2, minimal: 3 };
-  var VIZ = { off: 0, bars: 1, wave: 2, ring: 3 };
+  var VIZ = { off: 0, bars: 1, wave: 2, ring: 3, mirror: 4, led: 5, radial: 6, silk: 7, edges: 8, pulse: 9 };
   var VIZ_N = 32;     // visualizer bands (p.bands: a Float32Array of this length, 0–1)
 
   // Ribbons of the 'win11' looks, back to front, in screen units (height = 1,
@@ -74,6 +74,7 @@
     'uniform vec4 u_rib[' + (RIB_N * 4) + '];',
     'uniform vec4 u_viz;',          // visualizer: style (0 off, 1 bars, 2 wave, 3 ring), size
     'uniform float u_bands[' + VIZ_N + '];',
+    'uniform float u_peaks[' + VIZ_N + '];',
     'out vec4 o;',
     '',
     'float px;',                   // one pixel in screen units
@@ -369,40 +370,123 @@
     '  return mix(u_bands[i], u_bands[j], smoothstep(0.0, 1.0, f - float(i)));',
     '}',
     '',
+    'vec3 vcol(float u) { return mix(u_colA, u_colB, clamp(u, 0.0, 1.0)); }',
+    '',
+    'float bandI(float f) { return u_bands[int(clamp(floor(f), 0.0, ' + (VIZ_N - 1) + '.0))]; }',
+    'float peakI(float f) { return u_peaks[int(clamp(floor(f), 0.0, ' + (VIZ_N - 1) + '.0))]; }',
+    '',
+    // The soft sides of a bar inside its cell (0–1 across the cell)
+    'float barSide(float cell) { return smoothstep(0.08, 0.16, cell) * (1.0 - smoothstep(0.84, 0.92, cell)); }',
+    '',
     'vec3 visualizer(vec2 q, float asp) {',
-    '  float k = u_viz.y;',
-    '  if (u_viz.x < 2.5) {',
-    // Along the bottom, across the middle of the screen (clear of the corner card)
-    '    float w = asp * 0.56, u = (q.x + w * 0.5) / w;',
-    '    if (u < -0.02 || u > 1.02) return vec3(0.0);',
+    '  int st = int(u_viz.x + 0.5);',
+    '  float k = u_viz.y, t = u_time;',
+    '',
+    // Along the bottom, across the middle of the screen (clear of the corner card):
+    // bars (1), wave (2), mirrored bars (4), LED equalizer (5), silk waves (7)
+    '  if (st == 1 || st == 2 || st == 4 || st == 5 || st == 7) {',
+    '    float w = asp * (st == 7 ? 0.8 : 0.56), u = (q.x + w * 0.5) / w;',
+    '    if (u < -0.04 || u > 1.04) return vec3(0.0);',
     '    float y = q.y + 0.47;',
-    '    if (y > 0.2 * k + 0.08) return vec3(0.0);',
-    '    vec3 col = mix(u_colA, u_colB, clamp(u, 0.0, 1.0));',
-    '    if (u_viz.x < 1.5) {',
-    '      float f = u * ' + VIZ_N + '.0, cell = fract(f);',
-    '      float h = 0.006 + 0.16 * k * u_bands[int(clamp(floor(f), 0.0, ' + (VIZ_N - 1) + '.0))];',
-    '      float side = smoothstep(0.08, 0.16, cell) * (1.0 - smoothstep(0.84, 0.92, cell));',
+    '    if (y > 0.22 * k + 0.1 || y < (st == 4 ? -0.12 : -0.02)) return vec3(0.0);',
+    '    float edge = step(0.0, u) * step(u, 1.0);',
+    '    if (st == 1) {',
+    '      float f = u * ' + VIZ_N + '.0, side = barSide(fract(f));',
+    '      float h = 0.006 + 0.16 * k * bandI(f), pk = 0.012 + 0.16 * k * peakI(f);',
     '      float body = side * step(0.0, y) * (1.0 - smoothstep(h - 0.002, h + 0.002, y));',
     '      float glow = side * exp(-max(y - h, 0.0) / 0.012) * step(0.0, y) * 0.5;',
-    '      float edge = step(0.0, u) * step(u, 1.0);',
-    '      return col * (body * mix(0.55, 1.0, y / max(h, 0.001)) + glow) * edge * 0.85;',
+    '      float cap = side * exp(-abs(y - pk) / 0.0022) * 0.9;',
+    '      return vcol(u) * (body * mix(0.55, 1.0, y / max(h, 0.001)) + glow + cap) * edge * 0.85;',
     '    }',
-    '    float h = 0.012 + 0.14 * k * band(u);',
-    '    float d = abs(y - h);',
-    '    float fade = smoothstep(-0.02, 0.06, u) * (1.0 - smoothstep(0.94, 1.02, u));',
-    '    return col * (exp(-d * d / 0.000012) + 0.35 * exp(-d / 0.02)) * fade * 0.9;',
+    '    if (st == 2) {',
+    '      float h = 0.012 + 0.14 * k * band(u), d = abs(y - h);',
+    '      float fade = smoothstep(-0.02, 0.06, u) * (1.0 - smoothstep(0.94, 1.02, u));',
+    '      return vcol(u) * (exp(-d * d / 0.000012) + 0.35 * exp(-d / 0.02)) * fade * 0.9;',
+    '    }',
+    '    if (st == 4) {',
+    // Bass in the middle, treble at both ends, mirrored below a baseline
+    '      float m = abs(u - 0.5) * 2.0, f = m * ' + VIZ_N + '.0, side = barSide(fract(f));',
+    '      float yb = y - 0.07, h = 0.006 + 0.13 * k * bandI(f);',
+    '      float body = side * step(0.0, yb) * (1.0 - smoothstep(h - 0.002, h + 0.002, yb));',
+    '      float refl = side * step(yb, 0.0) * (1.0 - smoothstep(0.0, h * 0.7 + 0.002, -yb)) * 0.28;',
+    '      float glow = side * exp(-max(yb - h, 0.0) / 0.012) * step(0.0, yb) * 0.45;',
+    '      float base = exp(-yb * yb / 0.000004) * 0.35;',
+    '      return vcol(m) * (body * mix(0.6, 1.0, yb / max(h, 0.001)) + refl + glow + base) * edge * 0.85;',
+    '    }',
+    '    if (st == 5) {',
+    // Lit segments, the unlit ones faintly there, a peak that falls slowly
+    '      float f = u * ' + VIZ_N + '.0, side = barSide(fract(f));',
+    '      float seg = 0.0125, row = floor(y / seg), sg = fract(y / seg);',
+    '      float segMask = smoothstep(0.0, 0.1, sg) * (1.0 - smoothstep(0.62, 0.72, sg)) * side * step(0.0, y);',
+    '      float top = 0.17 * k, h = top * bandI(f), pk = top * peakI(f);',
+    '      float lit = step(row * seg, h - seg * 0.3);',
+    '      float peak = step(abs(row - floor(pk / seg)), 0.5) * step(0.004, pk);',
+    '      vec3 c = mix(vcol(u), vec3(1.0), smoothstep(0.55, 1.0, row * seg / max(top, 0.001)) * 0.45);',
+    '      return c * segMask * (lit * 0.95 + peak * 1.1 + 0.05) * edge * step(y, top + seg);',
+    '    }',
+    // Silk: three soft waves weaving over each other, each at its own pace
+    '    float fade = smoothstep(-0.03, 0.1, u) * (1.0 - smoothstep(0.9, 1.03, u));',
+    '    vec3 acc = vec3(0.0);',
+    '    for (int i = 0; i < 3; i++) {',
+    '      float fi = float(i);',
+    '      float amp = 0.12 * k * band(u * 0.92 + 0.04 * fi);',
+    '      float yi = 0.045 + 0.01 * fi + amp * (0.62 + 0.38 * sin(u * (8.0 + 3.0 * fi) + t * (0.7 + 0.45 * fi) + fi * 2.1));',
+    '      float d = y - yi;',
+    '      vec3 c = mix(u_colA, u_colB, fi * 0.5);',
+    '      acc += c * (exp(-d * d / 0.000018) * 0.9 + 0.22 * exp(-abs(d) / 0.018));',
+    '      if (i == 0) acc += c * step(y, yi) * step(0.0, y) * 0.1 * exp(-(yi - y) / 0.05);',
+    '    }',
+    '    return acc * fade;',
     '  }',
-    // A ring around the center: left and right mirror each other
-    '  float r = length(q), a = atan(q.x, q.y);',
-    '  float u = abs(a) / 3.14159265;',
-        // Wide enough for the song card (cover, title, artist, status) inside it
-    '  float r0 = 0.36, h = 0.10 * k * band(u);',
-    '  float d = r - r0;',
-    '  if (d < -0.02 || d > h + 0.08) return vec3(0.0);',
-    '  vec3 col = mix(u_colA, u_colB, u);',
-    '  float fill = step(0.0, d) * (1.0 - smoothstep(h - 0.003, h + 0.003, d));',
-    '  float rim = exp(-d * d / 0.000006);',
-    '  return col * (fill * 0.35 + rim * 0.6 + 0.25 * exp(-abs(d - h) / 0.01));',
+    '',
+    // Bars from the left and right edges of the screen, bass in the middle
+    '  if (st == 8) {',
+    '    float v = abs(q.y) / 0.36;',
+    '    if (v > 1.0) return vec3(0.0);',
+    '    float x = asp * 0.5 - abs(q.x), maxL = 0.2 * k + 0.04;',
+    '    if (x > maxL) return vec3(0.0);',
+    '    float f = v * ' + VIZ_N + '.0, side = barSide(fract(f));',
+    '    float L = 0.006 + 0.17 * k * bandI(f), pk = 0.012 + 0.17 * k * peakI(f);',
+    '    float body = side * (1.0 - smoothstep(L - 0.002, L + 0.002, x));',
+    '    float glow = side * exp(-max(x - L, 0.0) / 0.012) * 0.5;',
+    '    float cap = side * exp(-abs(x - pk) / 0.0022) * 0.8;',
+    '    return vcol(v) * (body * mix(1.0, 0.55, x / max(L, 0.001)) + glow + cap) * 0.85;',
+    '  }',
+    '',
+    // Around the center, wide enough for the song card (cover, title, artist,
+    // status) inside: ring (3), radial spikes (6), pulse rings (9). Left and
+    // right mirror each other
+    '  float r = length(q), a = atan(q.x, q.y), u = abs(a) / 3.14159265;',
+    '  float r0 = 0.36, d = r - r0;',
+    '  vec3 col = vcol(u);',
+    '  if (st == 3) {',
+    '    float h = 0.10 * k * band(u);',
+    '    if (d < -0.02 || d > h + 0.08) return vec3(0.0);',
+    '    float fill = step(0.0, d) * (1.0 - smoothstep(h - 0.003, h + 0.003, d));',
+    '    float rim = exp(-d * d / 0.000006);',
+    '    return col * (fill * 0.35 + rim * 0.6 + 0.25 * exp(-abs(d - h) / 0.01));',
+    '  }',
+    '  if (st == 6) {',
+    '    if (d < -0.02 || d > 0.17 * k + 0.04) return vec3(0.0);',
+    '    float cell = fract(a / 6.2831853 * 72.0 + 0.5);',
+    '    float side = smoothstep(0.18, 0.32, cell) * (1.0 - smoothstep(0.68, 0.82, cell));',
+    '    float h = 0.014 + 0.15 * k * band(u), dd = d - 0.012;',
+    '    float body = side * step(0.0, dd) * (1.0 - smoothstep(h - 0.004, h, dd));',
+    '    float tip = side * exp(-abs(dd - h) / 0.006) * 0.55;',
+    '    float circle = exp(-d * d / 0.000005) * 0.5;',
+    '    return col * (body * mix(0.45, 1.0, dd / max(h, 0.001)) + tip + circle) * 0.75;',
+    '  }',
+    '  if (st == 9) {',
+    '    if (d < -0.02) return vec3(0.0);',
+    '    float bass = (u_bands[0] + u_bands[1] + u_bands[2] + u_bands[3]) * 0.25;',
+    '    float ph = fract(max(d, 0.0) * 7.0 - t * 0.55);',
+    '    float dd = abs(ph - 0.5);',
+    '    float wave = exp(-dd * dd / 0.0016) * step(0.0, d);',
+    '    float amt = (0.1 + 1.3 * bass * k) * exp(-max(d, 0.0) * 3.2) * (0.55 + 0.9 * band(u));',
+    '    float rim = exp(-d * d / 0.000008) * (0.3 + 0.7 * bass);',
+    '    return col * (wave * amt + rim);',
+    '  }',
+    '  return vec3(0.0);',
     '}',
     '',
     'void main() {',
@@ -546,7 +630,7 @@
   }
 
   var UNIFORMS = ['u_res', 'u_time', 'u_itime', 'u_idle', 'u_style', 'u_show', 'u_colA', 'u_colB',
-    'u_base', 'u_audio', 'u_parts', 'u_coverOn', 'u_cover', 'u_coverSize', 'u_rib', 'u_viz', 'u_bands'];
+    'u_base', 'u_audio', 'u_parts', 'u_coverOn', 'u_cover', 'u_coverSize', 'u_rib', 'u_viz', 'u_bands', 'u_peaks'];
 
   function compile(type, src) {
     var sh = gl.createShader(type);
@@ -695,6 +779,7 @@
     gl.uniform1f(U.u_coverOn, p.hasCover && cover ? 1 : 0);
     gl.uniform4f(U.u_viz, VIZ[p.viz] || 0, +p.vizSize || 1, 0, 0);
     if (VIZ[p.viz] && p.bands) gl.uniform1fv(U.u_bands, p.bands);
+    if (VIZ[p.viz] && p.peaks) gl.uniform1fv(U.u_peaks, p.peaks);
     gl.activeTexture(gl.TEXTURE0);
     gl.bindTexture(gl.TEXTURE_2D, coverTex);
     gl.bindVertexArray(vao);

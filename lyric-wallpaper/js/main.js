@@ -539,7 +539,7 @@
   var gp = {     // background frame (reused)
     time: 0, idle: 'win11', idleMotion: false, show: 0, style: 'aurora', colA: live.A, colB: live.B, colBg: live.bg,
     bass: 0, volume: 0, beat: 0, reactive: 1, particles: true, hasCover: false,
-    viz: 'off', vizSize: 1, bands: new Float32Array(32)
+    viz: 'off', vizSize: 1, bands: new Float32Array(32), peaks: new Float32Array(32)
   };
 
   function tick(dt) {
@@ -615,7 +615,12 @@
     // The visualizer: the 64 audio bands, two by two (nothing without audio)
     gp.viz = on ? cfg.visualizer : 'off';
     gp.vizSize = cfg.vizsize;
-    for (var vb = 0, AB = A.bands; vb < 32; vb++) gp.bands[vb] = on ? Math.min(1, (AB[vb * 2] + AB[vb * 2 + 1]) * 0.5 * sens) : 0;
+    // and their peaks, which fall slowly (the LED, bar and edge styles)
+    for (var vb = 0, AB = A.bands; vb < 32; vb++) {
+      var bv = on ? Math.min(1, (AB[vb * 2] + AB[vb * 2 + 1]) * 0.5 * sens) : 0;
+      gp.bands[vb] = bv;
+      gp.peaks[vb] = Math.max(bv, gp.peaks[vb] - dt * 0.35);
+    }
     gp.hasCover = !!cover.ready;
     draw();
   }

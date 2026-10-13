@@ -84,14 +84,14 @@
     {
       id: 'neon', label: 'Neon Concert',
       values: {
-        bgstyle: 'spotlights', visualizer: 'ring', lyricfont: 'bahnschrift', lyricanim: 'words', textmode: 'album',
+        bgstyle: 'spotlights', visualizer: 'radial', lyricfont: 'bahnschrift', lyricanim: 'words', textmode: 'album',
         glowtext: true, particles: true, reactiveamt: 1.6
       }
     },
     {
       id: 'minimal', label: 'Minimal',
       values: {
-        bgstyle: 'minimal', visualizer: 'wave', lyricfont: 'segoe', lyricanim: 'fade', textmode: 'white',
+        bgstyle: 'minimal', visualizer: 'silk', lyricfont: 'segoe', lyricanim: 'fade', textmode: 'white',
         glowtext: false, particles: false, reactiveamt: 0.5, lyriccontext: false
       }
     },
@@ -105,7 +105,7 @@
     {
       id: 'poster', label: 'Poster',
       values: {
-        bgstyle: 'aurora', lyricfont: 'impact', lyricanim: 'words', lyricpos: 'left', lyricsize: 1.25,
+        bgstyle: 'aurora', visualizer: 'led', lyricfont: 'impact', lyricanim: 'words', lyricpos: 'left', lyricsize: 1.25,
         textmode: 'album', glowtext: false, particles: true
       }
     }
@@ -167,7 +167,13 @@
         ['off', 'Off'],
         ['bars', 'Bars at the bottom'],
         ['wave', 'Wave at the bottom'],
-        ['ring', 'Ring around the center']
+        ['ring', 'Ring around the center'],
+        ['mirror', 'Mirrored bars with a reflection'],
+        ['led', 'LED equalizer'],
+        ['radial', 'Spikes around the center'],
+        ['silk', 'Silk waves'],
+        ['edges', 'Bars on the screen edges'],
+        ['pulse', 'Pulse rings']
       ] },
     { key: 'vizsize', group: 'show', label: 'Visualizer size', type: 'slider', min: 0.3, max: 2, step: 0.05, def: 1, look: true,
       cond: ['audioenabled', { k: 'visualizer', ne: 'off' }] },

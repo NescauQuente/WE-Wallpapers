@@ -14,7 +14,7 @@ It also opens directly in a browser (open `index.html`; press **M** for the sett
 
 ## What it needs
 
-- **Audio visualizer:** the spectrum in the album colors, as bars or a wave along the bottom or a ring around the center (**Audio visualizer**, **Visualizer size**), drawn in the same pass as the background.
+- **Audio visualizer:** the spectrum in the album colors, in nine styles: bars, a wave, mirrored bars with a reflection, an LED equalizer with falling peaks and silk waves along the bottom; a ring, spikes or pulse rings around the center (the song card fits inside); bars along the screen edges (**Audio visualizer**, **Visualizer size**), drawn in the same pass as the background.
 - **Media integration:** turn on **Media integration** in the Wallpaper Engine settings. That is how the wallpaper learns which song is playing (title, artist, album, cover) in Spotify, browsers and any player that shows up in the Windows media overlay. Without it the show still starts on sound, but there is no song title, no album colors and no lyrics.
 - **Song position:** players that report their position (Wallpaper Engine's media timeline) get lyrics synced to the second, seeks included. With players that don't, the timing is counted from the start of the song; **Timing adjustment** (Lyrics) moves the lyrics earlier or later.
 - **Internet access** for the lyrics.
