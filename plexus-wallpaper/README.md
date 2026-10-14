@@ -20,7 +20,7 @@ It also runs directly in a browser (open `index.html`; press **M** for the setti
 ## Installing in Wallpaper Engine
 
 1. Copy this folder to `...\steamapps\common\wallpaper_engine\projects\myprojects\neural-plexus\`.
-2. The wallpaper shows up as **Neural Plexus** under "My Wallpapers" (`preview.jpg` is its thumbnail).
+2. The wallpaper shows up as **Neural Plexus** under "My Wallpapers" (`preview.gif`, an animated demo, is its thumbnail).
 
 ## Languages
 

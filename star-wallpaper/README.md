@@ -14,7 +14,7 @@ It also runs directly in a browser (open `index.html`; press **M** for the setti
 ## Installing in Wallpaper Engine
 
 1. Copy this folder to `...\steamapps\common\wallpaper_engine\projects\myprojects\starry-orbit\`.
-2. The wallpaper shows up as **Starry Orbit** under "My Wallpapers" (`preview.jpg` is its thumbnail).
+2. The wallpaper shows up as **Starry Orbit** under "My Wallpapers" (`preview.gif`, an animated demo, is its thumbnail).
 
 ## Languages
 

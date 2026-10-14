@@ -114,7 +114,7 @@ const project = {
     properties,
     supportsaudioprocessing: true
   },
-  preview: 'preview.jpg',
+  preview: 'preview.gif',
   tags: ['Abstract', 'Relaxing'],
   title: 'Starry Orbit',
   type: 'web',

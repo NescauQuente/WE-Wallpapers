@@ -115,7 +115,7 @@ const project = {
     properties,
     supportsaudioprocessing: true
   },
-  preview: 'preview.jpg',
+  preview: 'preview.gif',
   tags: ['Abstract', 'Technology'],
   title: 'Neural Plexus',
   type: 'web',
