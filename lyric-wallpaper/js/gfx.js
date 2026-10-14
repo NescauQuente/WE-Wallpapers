@@ -8,9 +8,12 @@
  *     with haze and dust ('win10'), or transparent so the user's own image
  *     (#ls-image, under the canvas) shows ('image').
  *   - The show: a dark base tinted by the album colors under aurora curtains,
- *     concert spotlights in haze, the blurred album cover or a faint glow,
- *     with floating particles (a hash grid in the same pass), audio pulses,
- *     a vignette and dithering.
+ *     a nebula, swirling liquid colors, the blurred album cover, concert
+ *     spotlights or lasers in haze, a tunnel of light, a retro sunset, a
+ *     night city or a faint glow, with floating particles (a hash grid in the
+ *     same pass), a vignette and dithering. Each one reacts to the music its
+ *     own way: bass, mids, beats, treble hits, drops, and its own clock that
+ *     runs faster while the music is intense.
  *   - The transition: a noise front, glowing in the album color, eats the
  *     idle look from the center out while the idle zooms in and softens.
  * The canvas has premultiplied alpha: it is opaque except for the 'image'
@@ -25,7 +28,7 @@
   'use strict';
 
   var IDLE = { win11: 0, win11dark: 1, win10: 2, image: 3 };
-  var STYLE = { aurora: 0, spotlights: 1, cover: 2, minimal: 3 };
+  var STYLE = { aurora: 0, spotlights: 1, cover: 2, minimal: 3, nebula: 4, fluid: 5, lasers: 6, tunnel: 7, synthwave: 8, city: 9 };
   var VIZ = { off: 0, bars: 1, wave: 2, ring: 3, mirror: 4, led: 5, radial: 6, silk: 7, edges: 8, pulse: 9 };
   var TRANS = { burn: 0, ripple: 1, pixels: 2, glass: 3, sweep: 4, vortex: 5, glitch: 6 };
   var VIZ_N = 32;     // visualizer bands (p.bands: a Float32Array of this length, 0–1)
@@ -64,7 +67,7 @@
     'uniform float u_time;',       // show clock (s)
     'uniform float u_itime;',      // idle clock: only runs with idle motion
     'uniform int u_idle;',         // 0 win11, 1 win11dark, 2 win10, 3 image
-    'uniform int u_style;',        // 0 aurora, 1 spotlights, 2 cover, 3 minimal
+    'uniform int u_style;',        // STYLE: 0 aurora … 9 city
     'uniform float u_show;',       // 0 idle … 1 show
     'uniform vec3 u_colA, u_colB, u_base;',
     'uniform vec4 u_audio;',       // bass, volume, beat (already × strength), strength
@@ -80,9 +83,13 @@
     'uniform vec4 u_viz;',          // visualizer: style (0 off, 1 bars, 2 wave, 3 ring), size
     'uniform float u_bands[' + VIZ_N + '];',
     'uniform float u_peaks[' + VIZ_N + '];',
+    'uniform vec4 u_react;',        // mids, treble hits, drop (× strength), beats counted
+    'uniform float u_flow;',        // the show's clock for the backgrounds: faster with the music
     'out vec4 o;',
     '',
     'float px;',                   // one pixel in screen units
+    // The music, set by showColor() for the background styles
+    'float aBass, aBeat, aMid, aHat, aDrop, aBeats, aVol;',
     '',
     // Hashes without sine (stable on every GPU), value noise and fbm
     'float hash(vec2 p) {',
@@ -114,6 +121,7 @@
     '  return s / t;',
     '}',
     'float gauss(vec2 d, float r) { return exp(-dot(d, d) / (r * r)); }',
+    'mat2 rot2(float a) { float c = cos(a), s = sin(a); return mat2(c, s, -s, c); }',
     '',
     // ---- Idle: ribbons -------------------------------------------------------
     // Ribbon i at q: x = signed distance across, y = half width there,
@@ -223,6 +231,14 @@
     '}',
     '',
     // ---- Show ----------------------------------------------------------------
+    // The spectrum at u (0 bass … 1 treble), smooth between the bands
+    'float band(float u) {',
+    '  float f = clamp(u, 0.0, 1.0) * ' + (VIZ_N - 1) + '.0;',
+    '  int i = int(f);',
+    '  int j = min(i + 1, ' + (VIZ_N - 1) + ');',
+    '  return mix(u_bands[i], u_bands[j], smoothstep(0.0, 1.0, f - float(i)));',
+    '}',
+    '',
     // Smooth upscale of the tiny cover (cubic B-spline from 4 bilinear taps).
     // textureLod: no derivatives inside the style branch (D3D keeps it a branch)
     'vec3 coverAt(vec2 uv) {',
@@ -242,11 +258,15 @@
     '  vec3 col = u_base;',
     // Big glows drifting behind, their shapes warped by a slow noise
     '  vec2 w = q + (vec2(noise(q * 1.3 + t * 0.03), noise(q * 1.3 + 5.2 - t * 0.025)) - 0.5) * 0.45;',
-    '  col += u_colA * 0.22 * gauss(w - vec2(asp * 0.32 * sin(t * 0.043), -0.28 + 0.10 * sin(t * 0.031 + 1.0)), 0.55);',
-    '  col += u_colB * 0.20 * gauss(w - vec2(-asp * 0.30 * sin(t * 0.037 + 2.3), 0.24 + 0.08 * sin(t * 0.047 + 4.0)), 0.6);',
+    // (they swell with the bass)
+    '  float sw = 1.0 + 0.25 * aBass, gl = 1.0 + 0.6 * aBass + 0.5 * aDrop;',
+    '  col += u_colA * 0.22 * gl * gauss(w - vec2(asp * 0.32 * sin(t * 0.043), -0.28 + 0.10 * sin(t * 0.031 + 1.0)), 0.55 * sw);',
+    '  col += u_colB * 0.20 * gl * gauss(w - vec2(-asp * 0.30 * sin(t * 0.037 + 2.3), 0.24 + 0.08 * sin(t * 0.047 + 4.0)), 0.6 * sw);',
     '  col += mix(u_colA, u_colB, 0.5) * 0.08 * gauss(w - vec2(asp * 0.2 * cos(t * 0.029), 0.0), 0.7);',
     // Two curtains: a bright lower edge with fine slanted rays rising from it,
-    // folding and fading in and out along their length
+    // folding and fading in and out along their length. They rise taller and
+    // brighter with the bass, flare white along the edge on the beat, shimmer
+    // with the treble, show more of themselves with the mids, surge on a drop
     '  for (int k = 0; k < 2; k++) {',
     '    float fk = float(k);',
     '    float x = q.x * (1.0 + 0.35 * fk) + fk * 3.1;',
@@ -256,21 +276,25 @@
     '    float rx = x + d * 0.3 + n * 0.8;',
     '    float rays = noise(vec2(rx * 15.0 + t * 0.06, d * 2.0 - t * 0.1)) * 0.6',
     '      + noise(vec2(rx * 38.0 - t * 0.04, d * 3.0 + fk * 9.0)) * 0.4;',
-    '    rays = smoothstep(0.2, 0.9, rays);',
-    '    float on = smoothstep(0.15, 0.7, noise(vec2(x * 1.2 - t * 0.03, fk * 7.0 + t * 0.01)));',
+    '    rays = smoothstep(0.2 - 0.12 * aHat, 0.9, rays);',
+    '    float on = smoothstep(0.15 - 0.15 * aMid, 0.7, noise(vec2(x * 1.2 - t * 0.03, fk * 7.0 + t * 0.01)));',
     '    float edge = exp(-d * d / 0.0010);',
     '    float lo = min(d, 0.0);',
-    '    float up = exp(-max(d, 0.0) / (0.24 - 0.07 * fk) - lo * lo / 0.003);',
-    '    float cur = (edge * (0.35 + 0.4 * rays) + up * rays) * (0.2 + 0.8 * on);',
+    '    float up = exp(-max(d, 0.0) / ((0.24 - 0.07 * fk) * (1.0 + 0.6 * aBass + 0.8 * aDrop)) - lo * lo / 0.003);',
+    '    float cur = (edge * (0.35 + 0.4 * rays + 0.6 * aBeat) + up * rays) * (0.2 + 0.8 * on) * (1.0 + 0.8 * aDrop);',
     '    vec3 c0 = k == 0 ? u_colA : u_colB, c1 = k == 0 ? u_colB : u_colA;',
-    '    col += mix(mix(c0, vec3(1.0), 0.2 * edge), c1, smoothstep(0.0, 0.3, d)) * cur * (0.62 - 0.22 * fk);',
+    '    col += mix(mix(c0, vec3(1.0), (0.2 + 0.35 * aBeat) * edge), c1, smoothstep(0.0, 0.3, d)) * cur * (0.62 - 0.22 * fk);',
     '  }',
     '  return col;',
     '}',
     '',
+    // The beams flash on the beat, a pair at a time (the other pair a little),
+    // the lamps flare on the treble, and on a drop every beam swings to the
+    // middle of the stage and flares
     'vec3 spotlights(vec2 q, float asp, float t, float haze) {',
     '  vec3 col = u_base * (0.6 + 0.8 * haze);',
     '  vec3 mixc = mix(u_colA, u_colB, 0.5);',
+    '  float lead = mod(aBeats, 2.0), toMid = min(1.0, aDrop * 1.2);',
     // A wash at the back of the stage and on the floor
     '  col += mixc * 0.05 * smoothstep(-0.5, 0.5, q.y);',
     '  col += mixc * 0.07 * gauss((q - vec2(0.0, -0.62)) * vec2(0.4, 1.4), 0.4);',
@@ -281,12 +305,14 @@
     // Four from the truss above, swinging
     '      o = vec2((fi / 3.0 - 0.5) * asp * 0.72, 0.48);',
     '      float ang = 0.42 * sin(t * (0.19 + 0.05 * fi) + fi * 2.1) - (fi / 3.0 - 0.5) * 0.35;',
+    '      ang = mix(ang, atan(-o.x, o.y), toMid);',
     '      dir = vec2(sin(ang), -cos(ang));',
     '    } else {',
     // Two from the floor corners, up and inward
     '      float side = i == 4 ? -1.0 : 1.0;',
     '      o = vec2(side * asp * 0.50, -0.50);',
     '      float ang = 0.55 + 0.25 * sin(t * 0.27 + fi * 1.3);',
+    '      ang = mix(ang, atan(asp * 0.5, 0.5), toMid);',
     '      dir = vec2(-side * sin(ang), cos(ang));',
     '    }',
     '    vec2 d = q - o;',
@@ -296,28 +322,265 @@
     '    float cone = (1.0 - smoothstep(0.5, 1.0, x)) * 0.5 + exp(-x * x * 6.0) * 0.6;',
     '    cone *= smoothstep(0.0, 0.03, along) * exp(-along * 0.8);',
     '    vec3 bc = mod(fi, 2.0) < 0.5 ? u_colA : u_colB;',
-    '    col += bc * cone * (0.15 + 1.1 * haze) * (i < 4 ? 0.5 : 0.35);',
+    '    float fl = 1.0 + aBeat * (i < 4 ? (abs(mod(fi, 2.0) - lead) < 0.5 ? 1.6 : 0.4) : 1.0) + 0.9 * aDrop;',
+    '    col += bc * cone * (0.15 + 1.1 * haze) * (i < 4 ? 0.5 : 0.35) * fl;',
     // The lamp, with a little horizontal flare
     '    vec3 lc = mix(bc, vec3(1.0), 0.65);',
-    '    col += lc * (gauss(d, 0.022) * 1.3 + gauss(d * vec2(0.12, 1.0), 0.01) * 0.35);',
+    '    col += lc * (gauss(d, 0.022) * 1.3 + gauss(d * vec2(0.12, 1.0), 0.01) * 0.35) * (1.0 + 1.5 * aHat + 0.5 * aDrop);',
     '  }',
     '  return col;',
     '}',
     '',
-    // The square cover fills the screen whatever its shape (portrait too)
+    // The square cover fills the screen whatever its shape (portrait too). It
+    // thumps closer on the beat, brightens with the bass, its floor glow
+    // breathes with the mids; a drop punches in with a bloom
     'vec3 coverBg(vec2 q, float asp, float t) {',
     '  vec2 w = vec2(noise(q * 1.4 + t * 0.05), noise(q * 1.4 + 9.3 - t * 0.04)) - 0.5;',
-    '  vec2 uv = (q / max(asp, 1.0)) / (1.12 + 0.04 * sin(t * 0.05)) + 0.5 + 0.05 * w',
+    '  vec2 uv = (q / max(asp, 1.0)) / ((1.12 + 0.04 * sin(t * 0.05)) * (1.0 + 0.02 * aBeat + 0.04 * aDrop)) + 0.5 + 0.05 * w',
     '    + 0.02 * vec2(sin(t * 0.031), cos(t * 0.027));',
     '  vec3 c = max(coverAt(uv), 0.0);',
     '  c = max(mix(vec3(dot(c, vec3(0.299, 0.587, 0.114))), c, 1.15), 0.0);',
-    '  return c * 0.34 + u_base * 0.5 + u_colA * 0.06 * gauss(q - vec2(0.0, -0.6), 0.6);',
+    '  return c * (0.34 + 0.12 * aBass + 0.15 * aDrop) + u_base * 0.5',
+    '    + u_colA * (0.06 + 0.1 * aMid) * gauss(q - vec2(0.0, -0.6), 0.6 + 0.12 * aMid)',
+    '    + mix(u_colA, u_colB, 0.5) * 0.12 * aDrop * gauss(q, 0.8);',
     '}',
     '',
+    // A glow on the floor that breathes with the bass, and a thin horizon
+    // that lights up on the beat and on a drop
     'vec3 minimal(vec2 q, float asp, float t) {',
     '  vec3 col = u_base * 0.5;',
-    '  col += u_colA * 0.24 * (0.85 + 0.15 * sin(t * 0.4)) * gauss((q - vec2(0.0, -0.55)) * vec2(0.6, 1.0), 0.5);',
+    '  col += u_colA * 0.24 * (0.85 + 0.15 * sin(t * 0.4) + 0.5 * aBass) * gauss((q - vec2(0.0, -0.55)) * vec2(0.6, 1.0), 0.5);',
     '  col += u_colB * 0.08 * gauss(q - vec2(asp * 0.35, 0.45), 0.5);',
+    '  col += mix(u_colA, vec3(1.0), 0.3) * exp(-abs(q.y + 0.36) / (0.0015 + px)) * exp(-q.x * q.x * 1.5) * (0.15 * aBeat + 0.3 * aDrop);',
+    '  return col;',
+    '}',
+    '',
+    // A starfield: one star at most per cell of a hash grid, about a pixel or
+    // two wide whatever the cell size (k: how many stars, 0–1)
+    'vec3 stars(vec2 q, float sc, float k, float t, float seed) {',
+    '  vec2 sp = q * sc, cell = floor(sp);',
+    '  vec3 h = hash3(cell + seed);',
+    '  if (h.x > k) return vec3(0.0);',
+    '  vec2 f = fract(sp) - 0.5 - (h.yz - 0.5) * 0.7;',
+    '  float r = px * sc * (0.6 + 1.6 * h.x / k);',
+    '  float tw = 0.55 + 0.45 * sin(t * (1.0 + 3.0 * h.y) + h.z * 40.0);',
+    '  float b = (0.35 + 0.65 * h.y) * tw * (1.0 + 1.5 * aHat * step(0.6, h.z));',
+    '  return mix(vec3(1.0), mix(u_colA, u_colB, h.z), 0.3) * exp(-dot(f, f) / (r * r)) * b;',
+    '}',
+    '',
+    // Nebula: clouds folded into themselves (fbm warped by fbm) with darker dust
+    // lanes and a bright core that breathes with the bass; stars, a shooting
+    // star now and then; a supernova on a drop
+    'vec3 nebula(vec2 q, float asp, float t) {',
+    '  vec3 col = u_base * 0.35;',
+    '  vec2 p = rot2(t * 0.012) * q * 1.5 + vec2(t * 0.01, 0.0);',
+    '  float o = fbm(p + 1.7, 3);',
+    '  float n = fbm(p * 1.3 + 2.6 * vec2(o, o * 0.6 + 0.3) + vec2(t * 0.015, -t * 0.01), 3);',
+    '  float lanes = smoothstep(0.45, 0.65, fbm(p * 2.2 - 3.1 + o, 2));',
+    '  float cloud = n * n * (1.0 - 0.6 * lanes);',
+    '  vec3 cc = mix(u_colB, u_colA, smoothstep(0.35, 0.7, o));',
+    '  col += cc * cloud * (1.0 + 0.6 * aMid);',
+    '  float core = n * n * n * n;',
+    '  col += mix(cc, vec3(1.0), 0.45) * core * core * (1.4 + 1.6 * aBass + 1.6 * aDrop);',
+    '  vec2 nova = q - vec2(asp * 0.2, 0.15);',
+    '  col += mix(u_colA, vec3(1.0), 0.6) * aDrop * (gauss(nova, 0.035) * 1.6 + gauss(nova, 0.25) * 0.35);',
+    '  col += stars(q + vec2(t * 0.004, 0.0), 75.0, 0.13, t, 3.0) * (1.0 - 0.7 * cloud) * (1.0 + 0.5 * aVol);',
+    '  col += stars(q + vec2(t * 0.007, 0.0), 38.0, 0.05, t, 9.0) * 1.2;',
+    // A shooting star now and then
+    '  float sp = t / 7.0, ph = fract(sp) * 7.0;',
+    '  if (ph < 0.9) {',
+    '    vec3 h = hash3(vec2(floor(sp), 3.7));',
+    '    vec2 dir = normalize(vec2(h.z > 0.5 ? -1.0 : 1.0, -0.45));',
+    '    vec2 d = q - (vec2((h.x - 0.5) * asp * 0.8, 0.22 + 0.2 * h.y) + dir * ph * 0.7);',
+    '    float along = dot(d, dir), perp = d.x * dir.y - d.y * dir.x;',
+    '    float tail = (1.0 - step(0.0, along)) * exp(along * 10.0) * exp(-perp * perp / (px * px * 2.0));',
+    '    col += vec3(1.0) * tail * sin(ph / 0.9 * 3.14159) * 0.8;',
+    '  }',
+    '  return col;',
+    '}',
+    '',
+    // Liquid colors: the cover's colors (or blobs of the album colors) swirling
+    // slowly like ink in water; the swirl bursts on a drop
+    'vec3 fluid(vec2 q, float asp, float t) {',
+    '  float sp = t * 0.06;',
+    '  vec2 p = q * 1.2;',
+    '  p += 0.65 * (vec2(noise(p * 1.2 + vec2(sp, -sp * 0.7)), noise(p * 1.2 + vec2(5.2 - sp * 0.8, 1.3 + sp))) - 0.5);',
+    '  p += 0.38 * (vec2(noise(p * 2.6 - sp * 1.3 + 8.0), noise(p * 2.6 + sp * 1.1 + 3.0)) - 0.5);',
+    // (fine veins, like ink spreading in water)
+    '  p += 0.1 * (vec2(noise(p * 6.0 + sp * 2.0), noise(p * 6.0 - sp * 1.7 + 4.0)) - 0.5);',
+    '  float r = length(p);',
+    '  p = rot2((1.2 + 1.2 * sin(sp * 0.7)) * exp(-r * 1.4) + 2.2 * aDrop * exp(-r * 1.8)) * p;',
+    '  vec3 c;',
+    '  if (u_coverOn > 0.5) {',
+    '    c = max(coverAt(clamp(p / max(asp, 1.0) * 0.6 + 0.5, 0.02, 0.98)), 0.0);',
+    '    c = max(mix(vec3(dot(c, vec3(0.299, 0.587, 0.114))), c, 1.35), 0.0);',
+    '    c = c * 0.5 + u_base * 0.35;',
+    '  } else {',
+    '    vec2 b0 = vec2(sin(sp * 1.1) * asp * 0.3, cos(sp * 0.9) * 0.25);',
+    '    vec2 b1 = vec2(cos(sp * 0.8 + 2.0) * asp * 0.32, sin(sp * 1.2 + 1.0) * 0.28);',
+    '    vec2 b2 = vec2(sin(sp * 0.7 + 4.0) * asp * 0.28, cos(sp + 3.0) * 0.3);',
+    '    vec2 b3 = vec2(cos(sp * 1.3 + 5.0) * asp * 0.25, sin(sp * 0.8 + 5.5) * 0.22);',
+    '    float w0 = gauss(p - b0, 0.42), w1 = gauss(p - b1, 0.42), w2 = gauss(p - b2, 0.38), w3 = gauss(p - b3, 0.36);',
+    '    c = (u_colA * w0 + u_colB * w1 + mix(u_colA, u_colB, 0.5) * 0.7 * w2 + (u_base * 1.6 + 0.03) * w3 + u_base * 0.03)',
+    '      / (w0 + w1 + w2 + w3 + 0.05);',
+    '    c = c * 0.62 + u_base * 0.2;',
+    '  }',
+    '  return c * (0.85 + 0.3 * aMid + 0.25 * aDrop);',
+    '}',
+    '',
+    // Laser show: fans of thin beams from the floor corners and the top, in
+    // haze; they sweep, open up with the bass, flash on the beat (one emitter
+    // after the other) and open all the way on a drop
+    'vec3 lasers(vec2 q, float asp, float t, float haze) {',
+    '  vec3 col = u_base * (0.45 + 0.7 * haze), acc = vec3(0.0);',
+    '  float lead = mod(aBeats, 3.0);',
+    '  for (int e = 0; e < 3; e++) {',
+    '    float fe = float(e);',
+    '    vec2 o = e == 2 ? vec2(0.0, 0.56) : vec2((fe * 2.0 - 1.0) * asp * 0.46, -0.52);',
+    '    float base = e == 2 ? 3.14159 : (1.0 - fe * 2.0) * 0.55;',
+    '    float sweep = 0.38 * sin(t * (0.45 + 0.12 * fe) + fe * 2.0);',
+    '    float open = 0.5 + 0.25 * sin(t * 0.31 + fe) + 0.35 * aBass + 0.7 * aDrop;',
+    '    float flash = 1.0 + 1.4 * aBeat * (abs(lead - fe) < 0.5 ? 1.0 : 0.3) + 0.8 * aDrop;',
+    '    vec3 bc = e == 0 ? u_colA : e == 1 ? u_colB : mix(u_colA, u_colB, 0.5);',
+    '    vec2 d = q - o;',
+    '    for (int b = 0; b < 6; b++) {',
+    '      float ang = base + sweep + (float(b) / 5.0 - 0.5) * open;',
+    '      vec2 dir = vec2(sin(ang), cos(ang));',
+    '      float along = dot(d, dir);',
+    '      if (along < 0.0) continue;',
+    '      float perp = abs(d.x * dir.y - d.y * dir.x);',
+    '      float w = 0.0012 + 0.0016 * along + px * 0.7;',
+    '      float core = exp(-perp * perp / (w * w)) * (1.0 + 0.6 * aHat);',
+    '      float glow = exp(-perp / (0.02 + 0.03 * along)) * 0.18;',
+    '      acc += (bc * (core * 0.9 + glow) + core * 0.35) * exp(-along * 0.55) * flash;',
+    '    }',
+    '    acc += mix(bc, vec3(1.0), 0.6) * gauss(d, 0.03) * 1.2 * flash;',
+    '  }',
+        // (softer behind the lyrics)
+    '  return col + acc * (0.2 + 0.5 * haze) * (1.0 - 0.45 * gauss((q - vec2(0.0, -0.03)) * vec2(0.55, 1.6), 0.4));',
+    '}',
+    '',
+    // Tunnel of light: rings and panel seams rushing past (far = the middle,
+    // dark behind the lyrics), stars streaking out; the rings flash on the beat
+    // and a drop throws it into hyperspeed
+    'vec3 tunnel(vec2 q, float asp, float t) {',
+    '  float r = length(q), rr = max(r, 0.004), a = atan(q.y, q.x);',
+    '  float z = 0.64 / rr, zs = z + t * 2.4;',
+    '  float wz = px * 0.64 / (rr * rr);',
+    '  float near = smoothstep(0.03, 0.5, r) * (1.0 - smoothstep(0.1, 0.35, wz));',
+    '  float dz = abs(fract(zs + 0.5) - 0.5), lw = 0.035 + wz;',
+    '  float ring = exp(-dz * dz / (lw * lw));',
+    '  float idx = floor(zs + 0.5);',
+    '  vec3 rc = mix(u_colA, u_colB, hash(vec2(idx, 1.3)));',
+    '  float sa = a / 6.2832 * 12.0 + zs * 0.06;',
+    '  float da = abs(fract(sa + 0.5) - 0.5) / 12.0 * 6.2832 * r;',
+    '  float seam = exp(-da * da / (px * px * 2.0 + 0.000004)) * 0.35;',
+    '  vec3 col = u_base * 0.3 + mix(u_colA, u_colB, 0.5) * 0.06 * near;',
+    '  float chk = mod(idx + floor(sa + 0.5), 2.0);',
+    '  col += rc * (ring + seam + 0.05 * chk) * near * (0.55 + 0.5 * aMid + 1.1 * aBeat);',
+    // Stars streaking out, longer on a drop
+    '  float ca = floor(a / 6.2832 * 64.0);',
+    '  vec3 h = hash3(vec2(ca, 7.7));',
+    '  float sa2 = (ca + 0.2 + 0.6 * h.y) / 64.0 * 6.2832;',
+    '  float head = fract(h.x + t * (0.22 + 0.25 * h.z));',
+    '  float hr = 0.04 + head * head * 0.9, len = 0.03 + 0.15 * head * head + 0.25 * aDrop;',
+    '  float perp = abs(a - sa2) * r;',
+    '  float streak = smoothstep(hr - len, hr, r) * step(r, hr) * exp(-perp * perp / (px * px * 2.0)) * head * step(h.z, 0.7);',
+    '  col += mix(vec3(1.0), rc, 0.4) * streak;',
+    '  col += mix(u_colA, u_colB, 0.5) * aDrop * 0.12 * smoothstep(0.1, 0.7, r);',
+    '  return col;',
+    '}',
+    '',
+    // Retro sunset: a striped sun going down behind two mountain ridges, stars,
+    // and a neon grid floor running toward the viewer (it flashes on the beat;
+    // the sun swells with the bass)
+    'vec3 synthwave(vec2 q, float asp, float t) {',
+    '  float hz = -0.28, R = 0.22;',
+    '  vec3 warm = mix(u_colB, u_colA, 0.25);',
+    '  vec2 sd = q - vec2(0.0, hz + 0.07);',
+    '  float sr = length(sd), glowK = 0.35 + 0.45 * aBass + 0.6 * aDrop;',
+    '  vec3 col;',
+    '  if (q.y > hz) {',
+    '    float h = q.y - hz;',
+    '    col = mix(warm * 0.3 + u_base * 0.4, u_base * 0.5, smoothstep(0.0, 0.5, h));',
+    '    col += stars(q, 70.0, 0.045, t, 9.1) * smoothstep(0.08, 0.3, h);',
+    // The sun: a gradient disc cut by stripes that slide down, wider at its foot
+    '    float sy = (sd.y + R) / (2.0 * R);',
+    '    float stripe = fract(sd.y * 16.0 - t * 0.25), sw = px * 20.0;',
+    '    float gap = clamp(0.75 - sy * 1.1, 0.0, 0.6);',
+    '    float cut = gap <= 0.0 ? 1.0 : smoothstep(gap - sw, gap + sw, stripe);',
+    '    float disc = 1.0 - smoothstep(R - px * 1.5, R + px * 1.5, sr);',
+    '    vec3 sc = mix(u_colB, mix(u_colA, vec3(1.0, 0.92, 0.75), 0.35), smoothstep(0.0, 1.0, sy));',
+    '    col = mix(col, sc * (0.55 + 0.1 * aBass + 0.12 * aDrop), disc * cut);',
+    '    col += sc * glowK * 0.4 * exp(-max(sr - R, 0.0) * 6.0);',
+    // Two mountain ridges in front of it, lower in the middle, rim-lit
+    '    for (int k = 0; k < 2; k++) {',
+    '      float fk = float(k), x = q.x * (1.6 + 0.8 * fk) + fk * 13.0;',
+    '      float ridge = hz + (0.08 + 0.05 * (1.0 - fk)) * (noise(vec2(x, fk)) * 0.65 + noise(vec2(x * 2.7, fk + 4.0)) * 0.35)',
+    '        * (0.35 + 0.65 * smoothstep(0.05, 0.7, abs(q.x) / asp * 2.0));',
+    '      float m = 1.0 - smoothstep(ridge - px, ridge + px, q.y);',
+    '      col = mix(col, u_base * (0.22 + 0.18 * fk), m);',
+    '      col += mix(u_colA, u_colB, 0.5 + 0.5 * fk) * exp(-abs(q.y - ridge) / (0.002 + px)) * (0.3 - 0.12 * fk) * (1.0 + aBeat);',
+    '    }',
+    '  } else {',
+    // The floor: grid lines in perspective; far away, where they get thinner
+    // than a pixel, they fade out (no moiré)
+    '    float d = hz - q.y, z = 0.12 / d;',
+    '    float gx = q.x * z * 8.0, gz = z * 8.0 + t * 1.5;',
+    // (a line's footprint across both screen axes: off to the side the depth
+    // lines lie almost flat and would break into dots)
+    '    float wx = px * z * 8.0 * sqrt(1.0 + q.x * q.x / (d * d)), wz = px * 0.96 / (d * d);',
+    '    float lx = abs(fract(gx + 0.5) - 0.5), lz = abs(fract(gz + 0.5) - 0.5);',
+    '    float gl = (1.0 - smoothstep(0.012, 0.012 + wx * 1.5, lx) + exp(-lx / 0.05) * 0.25) * (1.0 - smoothstep(0.06, 0.2, wx));',
+    '    float gm = (1.0 - smoothstep(0.012, 0.012 + wz * 1.5, lz) + exp(-lz / 0.05) * 0.25) * (1.0 - smoothstep(0.06, 0.2, wz));',
+    '    vec3 gc = mix(u_colA, u_colB, smoothstep(-0.6, 0.6, q.x / asp));',
+    '    col = u_base * 0.3 + warm * 0.2 * exp(-d * 7.0);',
+    '    col += gc * max(gl, gm) * exp(-z * 0.35) * (0.7 + 1.0 * aBeat + 0.6 * aDrop);',
+    '    col += warm * 0.3 * glowK * gauss((q - vec2(0.0, hz)) * vec2(1.6, 4.0), 0.25);',
+    '  }',
+    '  col += warm * exp(-abs(q.y - hz) / 0.004) * (0.35 + 0.3 * aBeat);',
+    '  return col;',
+    '}',
+    '',
+    // Night city: a moon, stars, two rows of buildings; their windows light up
+    // from the ground with the spectrum (each building follows the band at its
+    // place on screen: bass left, treble right), all of them on a drop
+    'vec3 city(vec2 q, float asp, float t) {',
+    '  vec3 col = mix(mix(u_colA, u_colB, 0.5) * 0.28 + u_base * 0.4, u_base * 0.45, smoothstep(-0.35, 0.35, q.y));',
+    '  col *= 1.0 + 0.4 * aBass * smoothstep(0.1, -0.4, q.y);',
+    '  col += stars(q, 60.0, 0.05, t, 4.2) * smoothstep(-0.1, 0.3, q.y);',
+    '  vec2 mp = q - vec2(asp * 0.32, 0.3);',
+    '  float mr = length(mp);',
+    '  col = mix(col, vec3(0.93, 0.93, 0.88), (1.0 - smoothstep(0.045 - px, 0.045 + px, mr)) * 0.85);',
+    '  col += mix(u_colA, vec3(1.0), 0.5) * 0.12 * exp(-mr * 9.0);',
+    '  for (int l = 0; l < 2; l++) {',
+    '    float fl = float(l), bw = 0.06 + 0.035 * fl, sh = fl * 0.37 + 5.0;',
+    '    float xx = (q.x + sh) / bw, bi = floor(xx), fx = fract(xx);',
+    '    vec3 h = hash3(vec2(bi, 3.0 + fl * 17.0));',
+    '    float top = l == 0 ? -0.3 + 0.22 * h.x : -0.42 + 0.17 * h.x;',
+    '    float gap = 0.06 + 0.06 * h.y, ex = px / bw;',
+    '    float body = smoothstep(gap - ex, gap + ex, fx) * (1.0 - smoothstep(1.0 - gap - ex, 1.0 - gap + ex, fx))',
+    '      * (1.0 - smoothstep(top - px, top + px, q.y));',
+    '    if (body > 0.0) {',
+    '      float wcols = 4.0 + floor(h.z * 3.0), wh = 0.024 + 0.008 * fl;',
+    '      float wu = (fx - gap) / (1.0 - 2.0 * gap) * wcols, wy = (top - q.y) / wh;',
+    '      vec2 wc = vec2(floor(wu), floor(wy)), wf = vec2(fract(wu), fract(wy));',
+    '      float win = step(0.25, wf.x) * step(wf.x, 0.75) * step(0.3, wf.y) * step(wf.y, 0.75) * step(1.0, wy);',
+    '      float u = clamp(((bi + 0.5) * bw - sh) / asp + 0.5, 0.0, 1.0), lv = band(u);',
+    '      float hw = hash(wc + vec2(bi * 7.0, fl * 13.0));',
+    '      float rf = (top - (wc.y + 0.5) * wh + 0.5) / (top + 0.5);',
+    '      float lit = max(step(hw, 0.2), step(rf, 0.1 + 0.9 * lv + aDrop) * step(hw, 0.5 + 0.45 * lv + aDrop));',
+    '      vec3 wcol = mix(vec3(1.0, 0.82, 0.55), mix(u_colA, u_colB, hash(wc + bi)), 0.55);',
+    '      float glow = (0.85 + 0.15 * sin(t * 3.0 + hw * 50.0)) * (0.8 + 0.6 * aBeat * step(0.5, hash(wc * 1.3 + bi)));',
+    '      vec3 bc = u_base * (0.2 - 0.06 * fl) + wcol * win * lit * glow * (0.45 + 0.2 * fl);',
+    '      col = mix(col, bc, body);',
+    '    }',
+    // A blinking light on the roof of some (it flares on the treble)
+    '    if (h.y > 0.6) {',
+    '      vec2 ap = q - vec2((bi + 0.5) * bw - sh, top + 0.012);',
+    '      col += vec3(1.0, 0.25, 0.2) * gauss(ap, 0.004) * step(0.55, fract(t * 0.7 + h.z)) * (1.0 + 1.5 * aHat);',
+    '    }',
+    '  }',
     '  return col;',
     '}',
     '',
@@ -338,27 +601,39 @@
     '    vec2 f = fract(p) - 0.5 - off;',
     '    float sz = fract(h.x * 13.7);',
     '    float r = l == 0 ? 0.03 + 0.07 * sz * sz : 0.025 + 0.03 * sz;',
-    '    float tw = 0.6 + 0.4 * sin(t * (0.7 + sz * 1.6) + h.y * 40.0);',
+    '    float tw = (0.6 + 0.4 * sin(t * (0.7 + sz * 1.6) + h.y * 40.0)) * (1.0 + aHat * step(0.6, h.z));',
     '    float b = (l == 0 ? 0.55 : 0.8) * (0.4 + 0.6 * h.z) / (1.0 + r * 12.0);',
     '    acc += mix(u_colA, mix(u_colB, vec3(1.0), 0.5), fract(h.y * 7.3)) * gauss(f, r) * tw * b;',
     '  }',
     '  return acc * smoothstep(0.2, 0.7, noise(q * 1.5 + vec2(0.0, -t * 0.03)));',
     '}',
     '',
+    // t: the backgrounds' own clock (its speed setting, faster while the
+    // music is intense)
     'vec3 showColor(vec2 q, float asp) {',
-    '  float t = u_time;',
-    '  float bass = u_audio.x, beat = u_audio.z;',
-    '  q /= 1.0 + 0.012 * bass;',
-    // Brightness pulse: strong at first, saturating (no wash-out at the top)
-    '  float x = 0.22 * bass + 0.16 * beat + 0.05 * u_audio.y * u_audio.w;',
+    '  float t = u_flow;',
+    '  aBass = u_audio.x; aBeat = u_audio.z; aVol = u_audio.y * u_audio.w;',
+    '  aMid = u_react.x; aHat = u_react.y; aDrop = u_react.z; aBeats = u_react.w;',
+    '  q /= 1.0 + 0.012 * aBass + 0.006 * aBeat;',
+    // Brightness pulse: strong at first, saturating (no wash-out at the top,
+    // and no hard strobe: a drop adds a quarter at most)
+    '  float x = 0.22 * aBass + 0.16 * aBeat + 0.05 * aVol + 0.12 * aDrop;',
     '  float pulse = 1.0 + x / (1.0 + 0.6 * x);',
     '  vec3 c;',
-    '  if (u_style == 1) c = spotlights(q, asp, t, smoothstep(0.25, 0.8, fbm(q * 3.0 + vec2(t * 0.05, -t * 0.03), 3)));',
+    '  if (u_style == 1 || u_style == 6) {',
+    '    float haze = smoothstep(0.25 - 0.12 * aBass, 0.8, fbm(q * 3.0 + vec2(t * 0.05, -t * 0.03), 3));',
+    '    c = u_style == 1 ? spotlights(q, asp, t, haze) : lasers(q, asp, t, haze);',
+    '  }',
     '  else if (u_style == 2 && u_coverOn > 0.5) c = coverBg(q, asp, t);',
     '  else if (u_style == 3) c = minimal(q, asp, t);',
+    '  else if (u_style == 4) c = nebula(q, asp, t);',
+    '  else if (u_style == 5) c = fluid(q, asp, t);',
+    '  else if (u_style == 7) c = tunnel(q, asp, t);',
+    '  else if (u_style == 8) c = synthwave(q, asp, t);',
+    '  else if (u_style == 9) c = city(q, asp, t);',
     '  else c = aurora(q, asp, t);',
     '  c = u_base * 0.3 + (c - u_base * 0.3) * pulse;',
-    '  if (u_parts > 0.5) c += particles(q, t) * (0.8 + 0.5 * bass);',
+    '  if (u_parts > 0.5) c += particles(q, t) * (0.8 + 0.5 * aBass);',
     '  float vg = 1.0 - smoothstep(0.3, 1.25, length(q * vec2(0.8, 1.0)));',
     '  return c * mix(0.35, 1.0, vg);',
     '}',
@@ -368,13 +643,6 @@
     '',
     // The audio visualizer: the spectrum (bass → treble) in the album colors,
     // added as light over the show
-    'float band(float u) {',
-    '  float f = clamp(u, 0.0, 1.0) * ' + (VIZ_N - 1) + '.0;',
-    '  int i = int(f);',
-    '  int j = min(i + 1, ' + (VIZ_N - 1) + ');',
-    '  return mix(u_bands[i], u_bands[j], smoothstep(0.0, 1.0, f - float(i)));',
-    '}',
-    '',
     'vec3 vcol(float u) { return mix(u_colA, u_colB, clamp(u, 0.0, 1.0)); }',
     '',
     'float bandI(float f) { return u_bands[int(clamp(floor(f), 0.0, ' + (VIZ_N - 1) + '.0))]; }',
@@ -685,7 +953,7 @@
   // ---------------------------------------------------------------------------
   var gl = null, canvas = null, ready = false;
   var prog = null, U = {}, vao = null, coverTex = null, cover = null;
-  var W = 0, H = 0, lastT = -1, idleT = 0, showT = 0;
+  var W = 0, H = 0, lastT = -1, idleT = 0, showT = 0, flowT = 0;
   var shown = 0;       // the show amount of the last frame drawn
   var stale = true;    // the canvas lost its picture (start, resize, context restored)
   var cA = new Float32Array(3), cB = new Float32Array(3), cBase = new Float32Array(3);
@@ -698,7 +966,7 @@
   }
 
   var UNIFORMS = ['u_res', 'u_time', 'u_itime', 'u_idle', 'u_style', 'u_show', 'u_colA', 'u_colB',
-    'u_base', 'u_audio', 'u_parts', 'u_coverOn', 'u_cover', 'u_coverSize', 'u_rib', 'u_viz', 'u_bands', 'u_peaks', 'u_trans', 'u_tseed', 'u_vc', 'u_vasp'];
+    'u_base', 'u_audio', 'u_parts', 'u_coverOn', 'u_cover', 'u_coverSize', 'u_rib', 'u_viz', 'u_bands', 'u_peaks', 'u_trans', 'u_tseed', 'u_vc', 'u_vasp', 'u_react', 'u_flow'];
 
   function compile(type, src) {
     var sh = gl.createShader(type);
@@ -800,10 +1068,13 @@
    * p: {
    *   time (s, monotonic), idle ('win11' | 'win11dark' | 'win10' | 'image'), idleMotion,
    *   show (0 = idle … 1 = show, already eased),
-   *   style ('aurora' | 'spotlights' | 'cover' | 'minimal'),
+   *   style ('aurora' | 'nebula' | 'fluid' | 'cover' | 'spotlights' | 'lasers' |
+   *   'tunnel' | 'synthwave' | 'city' | 'minimal'), speed (how fast the
+   *   background moves: its setting × the music's intensity),
    *   colA, colB ([r, g, b] 0–1: the two light colors; dark ones are lifted),
    *   colBg ([r, g, b] 0–1: the hue of the dark base, any brightness),
-   *   bass, volume, beat (0–1), reactive (0–3, 0 = none), particles,
+   *   bass, volume, beat, mid, hat (treble hits), drop (0–1), beats (counted),
+   *   reactive (0–3, 0 = none), particles,
    *   hasCover (setCover got an image: the 'cover' style falls back to
    *   'aurora' without one)
    * }
@@ -823,6 +1094,8 @@
     if (idleT > RIB_PERIOD && p.idle !== 'win10') idleT %= RIB_PERIOD;
     showT += dt;
     if (s <= 0.001 ? showT > 1000 : showT > 65536) showT %= 1000;
+    flowT += dt * (p.speed > 0 ? p.speed : 1);
+    if (s <= 0.001 ? flowT > 1000 : flowT > 65536) flowT %= 1000;
     shown = s;
     stale = false;
     var k = p.reactive > 0 ? p.reactive : 0;
@@ -850,7 +1123,10 @@
     gl.uniform1f(U.u_tseed, +p.tseed || 0);
     gl.uniform2f(U.u_vc, +p.vc || 0, 0);
     gl.uniform1f(U.u_vasp, +p.vasp || 0);
-    if (VIZ[p.viz] && p.bands) gl.uniform1fv(U.u_bands, p.bands);
+    gl.uniform4f(U.u_react, Math.min(1.5, (p.mid || 0) * k), Math.min(1.5, (p.hat || 0) * k), Math.min(1.5, (p.drop || 0) * k), (+p.beats || 0) % 1200);
+    gl.uniform1f(U.u_flow, flowT);
+    // (the night city's windows follow the spectrum too)
+    if (p.bands) gl.uniform1fv(U.u_bands, p.bands);
     if (VIZ[p.viz] && p.peaks) gl.uniform1fv(U.u_peaks, p.peaks);
     gl.activeTexture(gl.TEXTURE0);
     gl.bindTexture(gl.TEXTURE_2D, coverTex);
@@ -860,6 +1136,7 @@
   }
 
   S.gfx = {
+    STYLES: STYLE,
     init: init,
     resize: resize,
     setCover: setCover,
@@ -1097,6 +1374,9 @@
     x.drawImage(img, cx - r, cy - r, r * 2, r * 2);
   }
 
+  // The newer styles draw the nearest of these looks
+  var FALLBACK2 = { nebula: 'aurora', fluid: 'aurora', lasers: 'spotlights', tunnel: 'spotlights', synthwave: 'minimal', city: 'minimal' };
+
   function show2(x, p, W, H) {
     var t = c2.t, k = p.reactive > 0 ? p.reactive : 0;
     var bass = (p.bass || 0) * k, beat = (p.beat || 0) * k;
@@ -1106,7 +1386,8 @@
     x.globalCompositeOperation = 'source-over';
     x.fillStyle = c2.baseCss;
     x.fillRect(0, 0, W, H);
-    var style = p.style === 'cover' && !(p.hasCover && c2.cover) ? 'aurora' : p.style;
+    var style = FALLBACK2[p.style] || p.style;
+    if (style === 'cover' && !(p.hasCover && c2.cover)) style = 'aurora';
     if (style === 'cover') {
       var side = Math.max(W, H) * (1.12 + 0.04 * Math.sin(t * 0.05));
       x.imageSmoothingEnabled = true;

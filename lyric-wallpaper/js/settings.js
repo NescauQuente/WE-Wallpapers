@@ -109,6 +109,13 @@
         bgstyle: 'aurora', visualizer: 'led', lyricfont: 'impact', lyricanim: 'words', lyricpos: 'left', lyricsize: 1.25,
         textmode: 'album', glowtext: false, particles: true
       }
+    },
+    {
+      id: 'retro', label: 'Retro Wave',
+      values: {
+        bgstyle: 'synthwave', visualizer: 'mirror', lyricfont: 'bahnschrift', lyricanim: 'words', textmode: 'album',
+        glowtext: true, particles: false, transfx: 'glitch', reactiveamt: 1.3
+      }
     }
   ];
 
@@ -167,12 +174,23 @@
     { key: 'bgstyle', group: 'show', label: 'Background', type: 'combo', def: 'aurora', look: true,
       options: [
         ['aurora', 'Aurora in the album colors'],
-        ['spotlights', 'Concert spotlights'],
+        ['nebula', 'Deep space nebula'],
+        ['fluid', 'Liquid album colors'],
         ['cover', 'Blurred album cover'],
+        ['spotlights', 'Concert spotlights'],
+        ['lasers', 'Laser show'],
+        ['tunnel', 'Tunnel of light'],
+        ['synthwave', 'Retro sunset (synthwave)'],
+        ['city', 'Night city (the windows follow the music)'],
         ['minimal', 'Dark and minimal']
       ] },
+    { key: 'bgspeed', group: 'show', label: 'Background speed', type: 'slider', min: 0.25, max: 3, step: 0.05, def: 1, look: true },
     { key: 'reactive', group: 'show', label: 'Background reacts to the music', type: 'bool', def: true, look: true },
     { key: 'reactiveamt', group: 'show', label: 'Reaction strength', type: 'slider', min: 0, max: 3, step: 0.05, def: 1, look: true, cond: ['reactive'] },
+    { key: 'reactbeat', group: 'show', label: 'Flashes on the beat', type: 'bool', def: true, look: true, cond: ['reactive'] },
+    { key: 'reacttreble', group: 'show', label: 'Sparkles with the treble (hi-hats)', type: 'bool', def: true, look: true, cond: ['reactive'] },
+    { key: 'reactdrop', group: 'show', label: 'Big moment on the drop (when the bass comes back)', type: 'bool', def: true, look: true, cond: ['reactive'] },
+    { key: 'reactmotion', group: 'show', label: 'Moves faster when the music is intense', type: 'bool', def: true, look: true, cond: ['reactive'] },
     { key: 'particles', group: 'show', label: 'Floating particles', type: 'bool', def: true, look: true },
     { key: 'visualizer', group: 'show', label: 'Audio visualizer', type: 'combo', def: 'bars', look: true, cond: ['audioenabled'],
       options: [

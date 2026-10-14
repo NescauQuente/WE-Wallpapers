@@ -58,6 +58,10 @@
   var G = null, rendererName = '';  // Lyric.gfx (WebGL2) or Lyric.gfx2d
   var W = 0, H = 0;
   var time = 0, beat = 0, dirty = true, renders = 0, frames = 0, lastRender = -1, lost = 0;
+  // The music, for the background: treble hits (hi-hats), drops (the bass
+  // slamming back after a build-up), the beats counted (effects alternate)
+  // and how loud it is lately (the background moves faster)
+  var hat = 0, drop = 0, beats = 0, energy = 0;
 
   // ---------------------------------------------------------------------------
   // Settings
@@ -578,6 +582,7 @@
   var gp = {     // background frame (reused)
     time: 0, idle: 'win11', idleMotion: false, show: 0, style: 'aurora', colA: live.A, colB: live.B, colBg: live.bg,
     bass: 0, volume: 0, beat: 0, reactive: 1, particles: true, hasCover: false,
+    mid: 0, hat: 0, drop: 0, beats: 0, speed: 1,
     trans: 'burn', tseed: 0, vc: 0, vasp: 0, viz: 'off', vizSize: 1, bands: new Float32Array(32), peaks: new Float32Array(32)
   };
 
@@ -592,6 +597,8 @@
     updateShow(dt);
     easeColors(dt);
     beat *= Math.exp(-dt * 5);
+    hat *= Math.exp(-dt * 9);
+    drop *= Math.exp(-dt * 1.6);
     themeAge += dt;
     if (themeAge >= THEME_EVERY) updateTheme();
 
@@ -678,6 +685,19 @@
       gp.bands[vb] = bv;
       gp.peaks[vb] = Math.max(bv, gp.peaks[vb] - dt * 0.35);
     }
+    // Each reaction can be turned off on its own (the background only: the
+    // lyrics keep their beat)
+    var react = gp.reactive > 0;
+    if (!cfg.reactbeat) gp.beat = 0;
+    for (var mb = 4, msum = 0; mb < 20; mb++) msum += gp.bands[mb];
+    gp.mid = msum / 16;
+    gp.hat = react && cfg.reacttreble ? hat : 0;
+    gp.drop = react && cfg.reactdrop ? drop : 0;
+    gp.beats = beats;
+    energy += ((on ? Math.min(1, A.volume * sens) : 0) - energy) * Math.min(1, dt * 2);
+    // How fast the background moves: its speed setting, and faster while the
+    // music is intense (and right after a drop)
+    gp.speed = cfg.bgspeed * (react && cfg.reactmotion ? 1 + Math.min(1, gp.reactive) * (0.8 * energy + 1.5 * gp.drop) : 1);
     gp.hasCover = !!cover.ready;
     draw();
   }
@@ -745,6 +765,13 @@
   // A beat: the background and the current line flash, fading quickly
   audio.state.onBeat = function (strength) {
     beat = Math.max(beat, Math.min(1, strength));
+    beats++;
+  };
+  audio.state.onTreble = function (strength) {
+    hat = Math.max(hat, Math.min(1, strength));
+  };
+  audio.state.onDrop = function (strength) {
+    drop = Math.max(drop, strength);
   };
 
   // ---------------------------------------------------------------------------
